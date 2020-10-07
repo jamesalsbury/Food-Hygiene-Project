@@ -100,6 +100,9 @@ for (i in 1:nrow(All_data)){
 All_data %>%
   filter(Region!="Scotland")
 
-No_Scotland <- All_data %>%
+Eng_Wal_NI_data <- All_data %>%
   filter(Region!="Scotland")
+
+
+saveRDS(Eng_Wal_NI, file = "MyData/Eng_Wal_NI_data.rds")
 

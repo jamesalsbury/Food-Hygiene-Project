@@ -41,7 +41,7 @@ pal_sb <- colorNumeric("viridis", domain=merged_data_NG$mean)
 Eng_Wal_NI_data
 
 leaflet() %>%
-  setView(lng = -1.613, lat = 54.973, zoom =25) %>% 
+  setView(lng = -0.75, lat = 53, zoom =8) %>% 
   addTiles()  %>% 
   addPolygons(data=merged_data_NG,
               fillColor = ~pal_sb(merged_data_NG$mean),
@@ -54,3 +54,15 @@ leaflet() %>%
             values = merged_data_NG$mean, 
             position = "bottomright", 
             title = "Mean hygiene rating")
+
+
+saveRDS(NE_data_only, file = "/MyData/NE_data_only.rds")
+
+
+saveRDS(NE_data_only_rating, file="NE_data_only_rating.rds")
+saveRDS(NE_postcodes, file="NE_postcodes.rds")
+saveRDS(Eng_Wal_NI_data, file="Eng_Wal_NI_data.rds")
+saveRDS(NG_data_only, file="NG_data_only.rds")
+saveRDS(NG_data_only_rating, file="NG_data_only_rating.rds")
+saveRDS(NG_postcodes, file="NG_postcodes.rds")
+saveRDS(All_data, file="All_data.rds")

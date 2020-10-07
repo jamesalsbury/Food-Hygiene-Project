@@ -2,6 +2,8 @@ saveRDS(NE_data_only, file="NE_data_only.rds")
 saveRDS(NE_data_only_rating, file="NE_data_only_rating.rds")
 saveRDS(new_merge, file="new_merge.rds")
 
+
+
 Eng_Wal_NI_data <-  readRDS(file="/Users/jamesalsbury/Eng_Wal_NI_data.rds")
 NE_data_only <- readRDS(file="/Users/jamesalsbury/NE_data_only.rds")
 NE_data_only_rating <- readRDS(file="/Users/jamesalsbury/NE_data_only_rating.rds")
@@ -214,6 +216,7 @@ long1 <- NE_data_only_rating %>%
 new_merge <- merge(NE_postcodes, long1, by.x="name", by.y="Start_postcode")
 new_merge
 
+
 ggplot(new_merge)
 
 
@@ -240,5 +243,8 @@ addLegend(pal = pal_sb,
 install.packages("usethis")
 library(usethis)
 ?use_github
+
+
+
 
 
