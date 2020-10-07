@@ -28,17 +28,25 @@ bad_areas = c(11, 20, 35, 38, 51, 60, 79, 120)
 postcodeAreas = postcodeAreas[-bad_areas]
 
 i = 29
+postcodeAreas = postcodeAreas[1:3]
 sp_poly = list()
 for (i in seq_along(postcodeAreas)) {
   if (!(i %in% bad_areas)) {
+    cli::cat_bullet(postcodeAreas[i])
     path = paste0("https://raw.githubusercontent.com/missinglink/uk-postcode-polygons/master/geojson/",
                   postcodeAreas[i], ".geojson")
 
-    sp_poly[[sp_poly[i]]] = geojson_read(path, what = "sp")
+    sp_poly[[postcodeAreas[i]]] = geojson_read(path, what = "sp")
     sp_poly[[postcodeAreas[i]]]@data = sp_poly[[postcodeAreas[i]]]@data[, c("name", "description")]
     #assign(paste0(postcodeAreas[i], "_spatial_data"), geojson_read(path, what = "sp"))
   }
 }
+sp_poly$AB
+download.file(path, destfile = "/tmp/good.geojson")
+geojson_read("/tmp/good.geojson", what = "sp")
+
+
+geojson_read("/tmp/bad.geojson", what = "sp")
 
 # xxx <- E_spatial_data[,-(2:3)]
 # E_spatial_data <- xxx[,-(3:4)]
@@ -98,7 +106,7 @@ for(i in 1:length(postcodeAreas)){
 
     temparea <- eval(parse(text = paste0(postcodeAreas[i], '_postcode_data')))
     temparea <- temparea %>%
-      filter(rating==0 | rating==1 | rating==2 | rating==3 | rating==4 | rating==5)
+      filter(rating %in% 0:5)
     assign(paste0(postcodeAreas[i], "_postcode_data_ratings"),temparea)
 
 }
@@ -157,6 +165,13 @@ for(i in 2:length(postcodeAreas)){
 }
 
 
+all = NULL
+for (i in seq_along(sp_poly)) {
+  d = sp_poly[[i]]@data
+  d$type = names(sp_poly)[i]
+  all = rbind(all, d)
+}
+all
 
 
 pal_sb <- colorNumeric("YlOrRd", domain=All_postcodes_merged$mean)
