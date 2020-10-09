@@ -56,6 +56,24 @@ leaflet() %>%
             title = "Mean hygiene rating")
 
 
+mytext <- paste(
+  "Area: ", All_postcodes_merged@data$name,"<br/>",
+  sep="") %>%
+  lapply(htmltools::HTML)
+
+All_UK_postcodes
+leaflet() %>%
+  setView(lng = -0.75, lat = 53, zoom =8) %>% 
+  addTiles()  %>% 
+  addPolygons(data=all,
+              weight = 5,
+              opacity = 1,
+              color = "blue",
+              label=mytext,
+              dashArray = "3",
+              fillOpacity = 0.7)
+x@data$name
+
 saveRDS(NE_data_only, file = "/MyData/NE_data_only.rds")
 
 

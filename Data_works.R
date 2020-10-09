@@ -9,6 +9,9 @@ mean_ratings <- NE_data_only_rating %>%
   group_by(Start_postcode) %>% 
   summarise(mean=mean(rating))
 
+NE_data_only_rating <-  NE_data_only %>% 
+  filter(rating==0 | rating==1 | rating==2 | rating==3 | rating==4 | rating==5)
+
 
 merged_data <- merge(NE_postcodes, mean_ratings, by.x="name", by.y="Start_postcode")
 pal_sb <- colorNumeric("viridis", domain=merged_data$mean)

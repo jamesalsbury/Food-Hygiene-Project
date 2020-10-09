@@ -9,6 +9,10 @@ library(sp)
 library(magrittr)
 library(dplyr)
 library(sf)
+library(RColorBrewer)
+library(rjson)
+library(rgdal)
+
 
 
 All_UK_postcodes <- vector(mode="list", length=130)
@@ -27,6 +31,11 @@ for(i in 1:length(postcodeAreas)){
 }
 
 
+json_file <- "https://raw.githubusercontent.com/missinglink/uk-postcode-polygons/master/geojson/BS.geojson"
+json_data <- fromJSON(paste(readLines(json_file), collapse=""))
+json_data
+
+postcodeAreas[i]
 xxx <- E_spatial_data[,-(2:3)] 
 E_spatial_data <- xxx[,-(3:4)] 
 
@@ -151,13 +160,9 @@ for(i in 2:length(postcodeAreas)){
 
 
   
+pal_sb <- colorNumeric("BuGn", domain=All_postcodes_merged$mean)
 
-pal_sb <- colorNumeric("YlOrRd", domain=All_postcodes_merged$mean)
 
-install.packages("RColorBrewer")
-  library(RColorBrewer)
-
-display.brewer.all()
 
 leaflet() %>%
   setView(lng = -0.75, lat = 53, zoom =8) %>% 
@@ -165,7 +170,7 @@ leaflet() %>%
   addPolygons(data=All_postcodes_merged,
               fillColor = ~pal_sb(All_postcodes_merged$mean),
               weight = 2,
-              opacity = 1,
+              opacity = 0.5,
               color = "white",
               dashArray = "3",
               fillOpacity = 0.7) %>% 
@@ -174,4 +179,44 @@ leaflet() %>%
             position = "bottomright", 
             title = "Mean hygiene rating")
 
-colnames(Eng_Wal_NI_data)
+leaflet() %>%
+  setView(lng = -0.75, lat = 53, zoom =8) %>% 
+  addTiles()  %>% 
+  addPolygons(data=json_data,
+              weight = 2,
+              opacity = 0.5,
+              color = "white",
+              dashArray = "3",
+              fillOpacity = 0.7) 
+class(json_data) 
+
+json <- fromJSON(getURL('https://raw.githubusercontent.com/missinglink/uk-postcode-polygons/master/geojson/BS.geojson'))
+install.packages("RCurl")
+library(RCurl)
+names(json)
+
+nycounties <- rgdal::readOGR("https://raw.githubusercontent.com/missinglink/uk-postcode-polygons/master/geojson/BS.geojson")
+nycounties
+
+nycounties <- geojsonio::geojson_read("https://raw.githubusercontent.com/missinglink/uk-postcode-polygons/master/geojson/BS.geojson", what = "sp")
+
+
+topoData <- readLines("https://raw.githubusercontent.com/missinglink/uk-postcode-polygons/master/geojson/BS.geojson") %>% paste(collapse = "\n")
+topoData
+
+
+fp <- file.path("https://raw.githubusercontent.com/missinglink/uk-postcode-polygons/master/geojson/BS.geojson")
+json_data <- fromJSON(file = fp)
+class(json_data)
+
+path <- "/Users/jamesalsbury/Downloads/BS.json"
+BS <- geojson_read(path, what="sp")
+
+path <- "/Users/jamesalsbury/Downloads/CV.json"
+CV <- geojson_read(path, what="sp")
+
+path <- "/Users/jamesalsbury/Downloads/LL.json"
+LL <- geojson_read(path, what="sp")
+
+path <- "/Users/jamesalsbury/Downloads/EX.json"
+EX <- geojson_read(path, what="sp")
