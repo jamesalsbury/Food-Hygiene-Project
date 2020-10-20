@@ -3,9 +3,10 @@
 #
 # At the end, use saveRDS to save to data/
 
-library(tidyverse) 
+library(tidyverse)
 library(httr)
 library(jsonlite)
+library(dplyr)
 
 
 #Getting the establishment data
@@ -19,17 +20,17 @@ for (i in 1:500){
                    pageNumber = 1,
                    pageSize = 10000),
                  add_headers("x-api-version" = "2"))
-  
+
   # parse the response and convert to a data frame
   response <- content(request, as = "text", encoding = "UTF-8") %>%
     fromJSON(flatten = TRUE) %>%
     pluck("establishments") %>%
     as_tibble()
-  
+
   # tidy the data
-  
+
   if (nrow(response)==0) next
-  
+
   df <- response %>%
     mutate_all(funs(replace(., . == '', NA))) %>%
     select(name = BusinessName,
@@ -52,57 +53,63 @@ for (i in 1:500){
            address = str_replace_all(address, ", NA", ""),
            long = as.numeric(long),
            lat = as.numeric(lat))
-  
+
   All_data = rbind(All_data, df)
 }
 
-#Get the authority data
-# submit the request
-path <- "http://api.ratings.food.gov.uk/Authorities"
-request <- GET(url = path,
-               query = list(
-                 localAuthorityId =1,
-                 pageNumber = 1,
-                 pageSize = 10000),
-               add_headers("x-api-version" = "2"))
+# #Get the authority data
+# # submit the request
+# path <- "http://api.ratings.food.gov.uk/Authorities"
+# request <- GET(url = path,
+#                query = list(
+#                  localAuthorityId =1,
+#                  pageNumber = 1,
+#                  pageSize = 10000),
+#                add_headers("x-api-version" = "2"))
+#
+# # parse the response and convert to a data frame
+# response <- content(request, as = "text", encoding = "UTF-8") %>%
+#   fromJSON(flatten = TRUE) %>%
+#   pluck("authorities") %>%
+#   as_tibble()
+#
+# # tidy the data
+# df <- response %>%
+#   mutate_all(funs(replace(., . == '', NA))) %>%
+#   select(name = Name,
+#          region = RegionName,
+#          count = EstablishmentCount)
+#
+# AuthorityData <- df
+#
+# Region <- vector(mode="character", length = nrow(All_data))
+#
+# All_data <- All_data %>%
+#   add_column(Region)
 
-# parse the response and convert to a data frame
-response <- content(request, as = "text", encoding = "UTF-8") %>%
-  fromJSON(flatten = TRUE) %>%
-  pluck("authorities") %>%
-  as_tibble()
+# for (i in i:nrow(All_data)){
+#   for (j in 1:nrow(AuthorityData)){
+#     if (All_data$authorityName[i]==AuthorityData$name[j]){
+#       All_data$Region[i] = AuthorityData$region[j]
+#       break
+#     }
+#   }
+# }
+#
+#
+# Eng_Wal_NI_data <- All_data %>%
+#   filter(Region!="Scotland")
 
-# tidy the data
-df <- response %>%
-  mutate_all(funs(replace(., . == '', NA))) %>%
-  select(name = Name,
-         region = RegionName,
-         count = EstablishmentCount)
+All_data <- All_data  %>%
+  mutate(postcodeArea = str_extract(postcode, "[A-Z]+"))
 
-AuthorityData <- df
+All_data <- All_data  %>%
+  mutate(postcodeDistrict = str_extract(postcode, "\\w+"))
 
-saveRDS(AuthorityData, file="Authority_Data.rds")
+#Change date!!
 
-Region <- vector(mode="character", length = nrow(All_data))
+All_data_19_Oct <- All_data
 
-All_data <- All_data %>%
-  add_column(Region)
+saveRDS(All_data_19_Oct, file = "data/API_dated/All_data_19_Oct.rds")
 
-for (i in 1:nrow(All_data)){
-  for (j in 1:nrow(AuthorityData)){
-    if (All_data$authorityName[i]==AuthorityData$name[j]){
-      All_data$Region[i] = AuthorityData$region[j]
-      break
-    }
-  }
-}
-
-All_data %>%
-  filter(Region!="Scotland")
-
-Eng_Wal_NI_data <- All_data %>%
-  filter(Region!="Scotland")
-
-
-saveRDS(Eng_Wal_NI, file = "MyData/Eng_Wal_NI_data.rds")
 
