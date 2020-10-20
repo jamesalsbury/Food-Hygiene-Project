@@ -25,6 +25,8 @@ bad_areas = c(10, 19, 31, 49)
 goodPostcodeAreas = postcodeAreas[-bad_areas]
 badPostcodeAreas = postcodeAreas[bad_areas]
 Eng_Wal_NI_data = readRDS(file = "data/Eng_Wal_NI_data.rds")
+notRawNA <- Eng_Wal_NI_Data %>%
+  filter(!is.na(rawScore))
 
 sp_poly = list()
 postcode_data = list()
@@ -50,7 +52,7 @@ for (i in seq_along(badPostcodeAreas)) {
 
 for (i in seq_along(postcodeAreas)) {
   #Get the postcode data, only numeric values
-  postcode_data[[postcodeAreas[i]]] <- Eng_Wal_NI_data %>%
+  postcode_data[[postcodeAreas[i]]] <- notRawNA %>%
     filter(postcodeArea == postcodeAreas[i])
 
   postcode_data[[postcodeAreas[i]]] <- postcode_data[[postcodeAreas[i]]] %>%
@@ -61,7 +63,7 @@ for (i in seq_along(postcodeAreas)) {
   #Get a summary of the postcode data
   postcode_summary[[postcodeAreas[i]]] <- postcode_data[[postcodeAreas[i]]] %>%
     group_by(postcodeDistrict) %>%
-    summarise(mean = mean(rating), sd = sd(rating), count = n(), median = median(rating))
+    summarise(mean = mean(rating), sd = sd(rating), count = n(), median = median(rating), raw = mean(rawScore))
 
 
   for (j in 0:5){
@@ -119,7 +121,7 @@ for (i in seq_along(badPostcodeAreas)) {
 
 
 for (i in seq_along(postcodeAreas)) {
-  if (ncol(merged_sp_summary[[postcodeAreas[i]]]@data)==11){
+  if (ncol(merged_sp_summary[[postcodeAreas[i]]]@data)==12){
     merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
       mutate(zero.count = 0)
   }
@@ -152,15 +154,15 @@ for (i in seq_along(postcodeAreas)) {
   }
 }
 
-bins <- c(0, 0.2, 0.4, 0.6, 0.8, 1)
+bins <- c(0,5,10,15,20,25)
 
-pal_sb <- colorBin("BuGn", domain = All_postcodes_merged$mean, bins=bins)
+pal_sb <- colorBin("BuGn", domain = All_postcodes_merged$raw, bins=bins)
 
 
 mytext <- paste(
   "Area: ", All_postcodes_merged@data$name,"<br/>",
   "Count in area: ", All_postcodes_merged@data$count, "<br/>",
-  "Mean hygiene rating: ", round(All_postcodes_merged@data$five.percent, 2),
+  "Mean raw hygiene rating: ", round(All_postcodes_merged@data$raw, 2),
   sep="") %>%
   lapply(htmltools::HTML)
 
@@ -170,7 +172,7 @@ leaflet() %>%
   setView(lng = -0.75, lat = 53, zoom = 8) %>%
   addTiles() %>%
   addPolygons(data = All_postcodes_merged,
-              fillColor = ~pal_sb(All_postcodes_merged$five.percent),
+              fillColor = ~pal_sb(All_postcodes_merged$raw),
               weight = 2,
               opacity = 1,
               label = mytext,
@@ -178,11 +180,11 @@ leaflet() %>%
               dashArray = "3",
               fillOpacity = 0.7) %>%
   addLegend(pal = pal_sb,
-            values = All_postcodes_merged$five.percent,
+            values = All_postcodes_merged$raw,
             position = "bottomright",
-            title = "Mean hygiene rating")
+            title = "Mean raw hygiene rating")
 
-merged_sp_summary$AL@data
+
 
 
 
