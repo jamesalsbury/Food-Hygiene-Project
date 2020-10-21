@@ -1,7 +1,7 @@
 library(dplyr)
 library(tidyverse)
 
-Eng_Wal_NI_data = readRDS(file = "data/Eng_Wal_NI_data.rds")
+Eng_Wal_NI_Data = readRDS(file = "data/Eng_Wal_NI_data.rds")
 
 #Standard data
 RatingsOnly <-  Eng_Wal_NI_data %>%
