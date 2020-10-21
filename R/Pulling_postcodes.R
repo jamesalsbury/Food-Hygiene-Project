@@ -25,7 +25,7 @@ bad_areas = c(10, 19, 31, 49)
 goodPostcodeAreas = postcodeAreas[-bad_areas]
 badPostcodeAreas = postcodeAreas[bad_areas]
 Eng_Wal_NI_data = readRDS(file = "data/Eng_Wal_NI_data.rds")
-notRawNA <- Eng_Wal_NI_Data %>%
+notRawNA <- Eng_Wal_NI_data %>%
   filter(!is.na(rawScore))
 
 sp_poly = list()
@@ -100,23 +100,20 @@ for (i in seq_along(postcodeAreas)) {
   merged_sp_summary[[postcodeAreas[i]]] <- merge(sp_poly[[postcodeAreas[i]]], postcode_summary[[postcodeAreas[i]]], by.x = "name", by.y = "postcodeDistrict")
 
   merged_sp_summary[[postcodeAreas[i]]]@data[is.na(merged_sp_summary[[postcodeAreas[i]]]@data)] <- 0
-
-
 }
 
 #Make the non-connecting districts have the same data
-badDistricts <- c(9,25,27,70)
+badDistricts <- c(9, 25, 27, 70)
 badNames <- c(2, 7, 33, 57)
 for (i in seq_along(badPostcodeAreas)) {
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i],]$mean = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 2]]
-  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i]+1,]$mean = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 2]]
+  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i] + 1,]$mean = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 2]]
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i],]$sd = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 3]]
-  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i]+1,]$sd = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 3]]
+  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i] + 1,]$sd = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 3]]
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i],]$count = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 4]]
-  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i]+1,]$count = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 4]]
+  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i] + 1,]$count = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 4]]
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i],]$median = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 5]]
-  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i]+1,]$median = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 5]]
-
+  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i] + 1,]$median = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 5]]
 }
 
 
@@ -154,19 +151,13 @@ for (i in seq_along(postcodeAreas)) {
   }
 }
 
-bins <- c(0,5,10,15,20,25)
-
-pal_sb <- colorBin("BuGn", domain = All_postcodes_merged$raw, bins=bins)
-
-
-mytext <- paste(
+bins <- seq(0, 25, by = 5)
+pal_sb <- colorBin("BuGn", domain = All_postcodes_merged$raw, bins = bins)
+mytext <- paste0(
   "Area: ", All_postcodes_merged@data$name,"<br/>",
   "Count in area: ", All_postcodes_merged@data$count, "<br/>",
-  "Mean raw hygiene rating: ", round(All_postcodes_merged@data$raw, 2),
-  sep="") %>%
+  "Mean raw hygiene rating: ", round(All_postcodes_merged@data$raw, 2)) %>%
   lapply(htmltools::HTML)
-
-
 
 leaflet() %>%
   setView(lng = -0.75, lat = 53, zoom = 8) %>%
