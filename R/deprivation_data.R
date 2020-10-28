@@ -4,7 +4,8 @@ library(httr)
 library(jsonlite)
 library(leaflet)
 library(geojsonio)
-all_postcodes_deprivation <- readRDS(file = "data/all_postcodes_deprivation.rds")
+
+full_postcode_dep_data <- readRDS("data/full_postcode_dep_data.rds")
 
 
 postcodeAreas <- c("AL" ,"B", "BA" ,"BB" ,"BD" ,"BH" ,"BL" ,"BN" ,"BR" ,"BS", "CA", "CB",
@@ -20,8 +21,15 @@ postcodeAreas <- c("AL" ,"B", "BA" ,"BB" ,"BD" ,"BH" ,"BL" ,"BN" ,"BR" ,"BS", "C
 bad_areas = c(10, 19, 31, 49)
 goodPostcodeAreas = postcodeAreas[-bad_areas]
 badPostcodeAreas = postcodeAreas[bad_areas]
+Eng_Wal_NI_data = readRDS(file = "data/Eng_Wal_NI_data.rds")
+notRawNA <- Eng_Wal_NI_Data %>%
+  filter(!is.na(rawScore))
 
 sp_poly = list()
+postcode_data = list()
+postcode_summary = list()
+merged_sp_summary  = list()
+
 
 
 for (i in seq_along(goodPostcodeAreas)) {
@@ -48,25 +56,24 @@ for (i in seq_along(postcodeAreas)) {
 }
 
 
-
-postcode_dep_summary <- all_postcodes_deprivation %>%
-  group_by(PostcodeDistrict)  %>%
-  summarise(mean = mean(`Index of Multiple Deprivation Rank`), count=n())
-
-
-merged_dep <- merge(All_postcodes_merged, postcode_dep_summary,  by.x = "name", by.y = "PostcodeDistrict")
+long <- full_postcode_dep_data %>%
+  group_by(postcodeDistrict)  %>%
+  summarise(mean = mean(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`), count=n())
 
 
+merged_sp_summary1 <- merge(All_postcodes_merged, long,  by.x = "name", by.y = "postcodeDistrict")
 
 
-pal_sb <- colorBin("BuGn", domain = merged_dep$mean)
+bins = c(1,100,100000)
 
+
+pal_sb <- colorBin("BuGn", domain = merged_sp_summary1$mean)
 
 
 mytext <- paste(
-  "Area: ", merged_dep@data$name,"<br/>",
-  "Count in area: ", merged_dep@data$count, "<br/>",
-  "Mean deprivation rank: ", round(merged_dep@data$mean, 2),
+  "Area: ", merged_sp_summary1@data$name,"<br/>",
+  "Count in area: ", merged_sp_summary1@data$count, "<br/>",
+  "Mean deprivation Rank: ", round(merged_sp_summary1@data$mean, 2),
   sep="") %>%
   lapply(htmltools::HTML)
 
@@ -75,8 +82,8 @@ mytext <- paste(
 leaflet() %>%
   setView(lng = -0.75, lat = 53, zoom = 8) %>%
   addTiles() %>%
-  addPolygons(data = merged_dep,
-              fillColor = ~pal_sb(merged_dep$mean),
+  addPolygons(data = merged_sp_summary1,
+              fillColor = ~pal_sb(merged_sp_summary1$mean),
               weight = 2,
               opacity = 1,
               label = mytext,
@@ -84,8 +91,8 @@ leaflet() %>%
               dashArray = "3",
               fillOpacity = 0.7) %>%
   addLegend(pal = pal_sb,
-            values = merged_dep$mean,
+            values = merged_sp_summary1$mean,
             position = "bottomright",
-            title = "Mean deprivation rank")
+            title = "Mean deprivation Rank")
 
 

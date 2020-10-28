@@ -108,8 +108,9 @@ All_data <- All_data  %>%
 
 #Change date!!
 
-All_data_19_Oct <- All_data
+All_data_26_Oct <- All_data
 
-saveRDS(All_data_19_Oct, file = "data/API_dated/All_data_19_Oct.rds")
+saveRDS(All_data_26_Oct, file = "data/API_dated/All_data_26_Oct.rds")
 
+All_data
 
