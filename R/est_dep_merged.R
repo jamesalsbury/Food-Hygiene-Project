@@ -10,17 +10,24 @@ establishment_dep_merged  <- establishment_dep_merged %>%
 
 establishment_dep_merged[,12] <- as.numeric(as.character(establishment_dep_merged[,12]))
 
+
 for (i in 33:85){
   establishment_dep_merged[,i] <- as.numeric(as.character(establishment_dep_merged[,i]))
 }
 
-mod1 <- lm(log(rating) ~ log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)*type, data = establishment_dep_merged)
 
-mod1.res <- resid(mod1)
+compare <- establishment_dep_merged %>%
+  filter(type=="Takeaway/sandwich shop" | type =="Farmers/growers")
 
 
-plot(log(establishment_dep_merged$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`), mod1.res)
+mod1 <- lm(log(rating) ~ log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+type, data = compare)
+
+
+
+
 
 summary(mod1)
-
+establishment_dep_merged[,12] <- as.factor(as.character(establishment_dep_merged[,12]))
+ordinal <- polr(formula = rating~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+type, data = establishment_dep_merged)
+summary(ordinal)
 
