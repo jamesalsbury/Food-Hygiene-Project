@@ -151,19 +151,19 @@ for (i in seq_along(postcodeAreas)) {
   }
 }
 
-bins <- seq(0, 25, by = 5)
-pal_sb <- colorBin("BuGn", domain = All_postcodes_merged$raw, bins = bins)
+bins <- seq(3, 5, , by = 0.25)
+pal_sb <- colorBin("RdYlGn", domain = All_postcodes_merged$mean, bins = bins)
 mytext <- paste0(
   "Area: ", All_postcodes_merged@data$name,"<br/>",
   "Count in area: ", All_postcodes_merged@data$count, "<br/>",
-  "Mean raw hygiene rating: ", round(All_postcodes_merged@data$raw, 2)) %>%
+  "Mean  hygiene rating: ", round(All_postcodes_merged@data$mean, 2)) %>%
   lapply(htmltools::HTML)
 
 leaflet() %>%
   setView(lng = -0.75, lat = 53, zoom = 8) %>%
   addTiles() %>%
   addPolygons(data = All_postcodes_merged,
-              fillColor = ~pal_sb(All_postcodes_merged$raw),
+              fillColor = ~pal_sb(All_postcodes_merged$mean),
               weight = 2,
               opacity = 1,
               label = mytext,
@@ -171,9 +171,9 @@ leaflet() %>%
               dashArray = "3",
               fillOpacity = 0.7) %>%
   addLegend(pal = pal_sb,
-            values = All_postcodes_merged$raw,
+            values = All_postcodes_merged$mean,
             position = "bottomright",
-            title = "Mean raw hygiene rating")
+            title = "Mean hygiene rating")
 
 
 
