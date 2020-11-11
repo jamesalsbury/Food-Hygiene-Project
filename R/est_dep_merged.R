@@ -2,6 +2,7 @@
 library(dplyr)
 library(MASS)
 library(leaflet)
+library(stringr)
 full_postcode_dep_data <- readRDS("data/full_postcode_dep_data.rds")
 Eng_Wal_NI_data <- readRDS("data/Eng_Wal_NI_data.rds")
 
@@ -25,7 +26,7 @@ summary(ordinal)
 #Pulling out chains
 #KFC
 KFC <- establishment_dep_merged %>%
-  filter(name == "KFC")
+  filter(str_detect(name,"(?i)^KFC", ))
 
 KFC %>%
   count(type)
@@ -42,10 +43,11 @@ leaflet(data = KFC) %>%
 #McDonalds
 
 McDonalds <- establishment_dep_merged %>%
-  filter(name == "McDonalds")
+  filter(str_detect(name,"(?i)^McDonal", ))
+
 
 McDonalds %>%
-  count(type)
+ filter(type=="Farmers/growers")
 
 qpal <- colorFactor("YlOrRd", McDonalds$type)
 
@@ -55,3 +57,35 @@ leaflet(data = McDonalds) %>%
   addCircleMarkers(color  = ~qpal(type)) %>%
   addLegend("bottomright", pal = qpal, values = ~type,
             title = "Type of McDonalds", opacity = 1)
+
+
+Greggs <- establishment_dep_merged %>%
+  filter(str_detect(name,"(?i)^Gregg", ))
+
+Asda <- establishment_dep_merged %>%
+  filter(str_detect(name,"(?i)^Asda", ))
+
+Tesco <- establishment_dep_merged %>%
+  filter(str_detect(name,"(?i)^Tesco", ))
+
+Sainsburys <- establishment_dep_merged %>%
+  filter(str_detect(name,"(?i)^Sains", ))
+
+Nandos <- establishment_dep_merged %>%
+  filter(str_detect(name,"(?i)^Nando", ))
+
+Dominos <- establishment_dep_merged %>%
+  filter(str_detect(name,"(?i)^Domino", ))
+
+BurgerKing <- McDonalds <- establishment_dep_merged %>%
+  filter(str_detect(name,"(?i)^Burger K", ))
+
+PizzaHut <- establishment_dep_merged %>%
+  filter(str_detect(name,"(?i)^Pizza Hut", ))
+
+Subway <- establishment_dep_merged %>%
+  filter(str_detect(name,"(?i)^McDonal", ))
+
+
+new <- establishment_dep_merged %>%
+  mutate(chain = str_detect(name,"(?i)^McDonal", ) | str_detect(name,"(?i)^Tesco", ))
