@@ -1,8 +1,9 @@
-#merge deprivation data witg establishment data
+#merge deprivation data with establishment data
 library(dplyr)
 library(MASS)
 library(leaflet)
 library(stringr)
+library(ordinal)
 full_postcode_dep_data <- readRDS("data/full_postcode_dep_data.rds")
 Eng_Wal_NI_data <- readRDS("data/Eng_Wal_NI_data.rds")
 
@@ -17,11 +18,23 @@ for (i in 33:85){
   establishment_dep_merged[,i] <- as.numeric(as.character(establishment_dep_merged[,i]))
 }
 
+#Create a new column called chain
+establishment_dep_merged <- establishment_dep_merged %>%
+  mutate(chain = str_detect(name,"(?i)^Gregg", ) | str_detect(name,"(?i)^Domino", ) | str_detect(name,"(?i)^Burger King", ) | str_detect(name,"(?i)^Mcdonal", )
+         | str_detect(name,"(?i)^KFC", ) | str_detect(name,"(?i)^Pizza Hut", ) | str_detect(name,"(?i)^Subway", ) | str_detect(name,"(?i)^Costa", )
+         |str_detect(name,"(?i)^Toby Car", ) | str_detect(name,"(?i)^Bella Ital", ) | str_detect(name,"(?i)^PizzaE", ) | str_detect(name,"(?i)^Nando", )
+         |str_detect(name,"(?i)^Harvester", ) | str_detect(name,"(?i)^TGI F", ) | str_detect(name,"(?i)^Papa J", ) | str_detect(name,"(?i)^Asda", )
+         |str_detect(name,"(?i)^Tesco", ) | str_detect(name,"(?i)^Morrison", ) | str_detect(name,"(?i)^Sainsbury", ))
+
+
 
 #Ordinal regression
 establishment_dep_merged[,12] <- as.factor(as.character(establishment_dep_merged[,12]))
 ordinal <- polr(formula = rating~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+type, data = establishment_dep_merged)
+clm <- clm(formula = rating~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+type, data = establishment_dep_merged)
+summary(clm)
 summary(ordinal)
+
 
 #Pulling out chains
 #KFC
@@ -43,11 +56,10 @@ leaflet(data = KFC) %>%
 #McDonalds
 
 McDonalds <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^McDonal", ))
-
+  filter(str_detect(name,"(?i)^McDonald", ))
 
 McDonalds %>%
- filter(type=="Farmers/growers")
+  count(type)
 
 qpal <- colorFactor("YlOrRd", McDonalds$type)
 
@@ -59,33 +71,10 @@ leaflet(data = McDonalds) %>%
             title = "Type of McDonalds", opacity = 1)
 
 
-Greggs <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^Gregg", ))
-
-Asda <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^Asda", ))
-
-Tesco <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^Tesco", ))
-
-Sainsburys <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^Sains", ))
-
-Nandos <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^Nando", ))
-
-Dominos <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^Domino", ))
-
-BurgerKing <- McDonalds <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^Burger K", ))
-
-PizzaHut <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^Pizza Hut", ))
-
-Subway <- establishment_dep_merged %>%
-  filter(str_detect(name,"(?i)^McDonal", ))
+#Pick out caring premises, takeaways and schools etc
+comparetypes <- establishment_dep_merged %>%
+  filter(type=="Takeaway/sandwich shop"|type=="Caring Premises"|type=="School/college/university")
 
 
-new <- establishment_dep_merged %>%
-  mutate(chain = str_detect(name,"(?i)^McDonal", ) | str_detect(name,"(?i)^Tesco", ))
+compareclm <- clm(formula = rating~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+type, data = comparetypes)
+summary(compareclm)
