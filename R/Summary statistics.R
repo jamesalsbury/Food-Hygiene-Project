@@ -1,18 +1,30 @@
 library(dplyr)
 library(tidyverse)
 
-Eng_Wal_NI_Data = readRDS(file = "data/Eng_Wal_NI_data.rds")
+establishment_dep_merged = readRDS(file = "data/establishment_dep_merged.rds")
+
+
+ratings <- establishment_dep_merged %>%
+  count(rating)
+ratings <- ratings %>%
+  filter(rating %in% 0:5)
+hist(ratings)
+ratings
 
 #Standard data
-RatingsOnly <-  Eng_Wal_NI_data %>%
-  filter(rating %in% 0:5)
+establishment_dep_merged %>%
+  count(rating)
 
-RatingsOnly$rating <- as.numeric(as.character(RatingsOnly$rating))
+
+ratings$rating <- as.numeric(as.character(ratings$rating))
 
 SummaryCount <- RatingsOnly %>%
   count(rating)
 
-
+sum(ratings$n)
+establishment_dep_merged$postcodeArea
+ratings %>%
+  filter(rating==5)
 #bar chart
 ggplot(data=SummaryCount) + geom_bar(mapping=aes(x=rating, y=n), stat="identity")
 
