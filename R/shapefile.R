@@ -28,22 +28,34 @@ newcastle_roads <- readRDS("data/Newcastle_roads.rds")
 box_sp <- SpatialPoints(coords = c(newcastle_box[10], newcastle_box[11]))
 
 
-new1 <- st_sfc(newcastle_roads$geometry, crs = "+proj=longlat +datum=WGS84")
-new1 <- as(newcastle_roads, "Spatial")
-combined <- snapPointsToLines(box_sp, new1, idField = "Fid")
+roads_as_spatial <- as(newcastle_roads, "Spatial")
+combined <- snapPointsToLines(box_sp, roads_as_spatial, idField = "Fid")
 
 road_count <- combined@data %>%
   count(nearest_line_id)
 
 
-merged_snapped <- merge(new1@data, road_count, by.x = "Fid", by.y = "nearest_line_id")
+merged_snapped <- merge(roads_as_spatial@data, road_count, by.x = "Fid", by.y = "nearest_line_id")
 
-n <- vector(length=nrow(newcastle_roads), mode="numeric")
+merged_snapped <-  merged_snapped[,-(2:5)]
 
-newcastle_roads <- newcastle_roads %>%
-  add_column(n)
+merged_snapped <- left_join(newcastle_roads, merged_snapped)
+
+merged_snapped$n[is.na(merged_snapped$n)] <- 0
 
 
-merged_snapped <- st_join(newcastle_roads, merged_snapped)
+
+bins <- c(0,2, 4, 6, 8, 10, 100)
+pal <- colorBin("YlOrRd", domain = merged_snapped$n, bins = bins)
+
+leaflet(merged_snapped) %>%
+  addProviderTiles(providers$Stamen.Toner) %>%
+  addPolylines(color = ~pal(merged_snapped$n)) %>%
+  addLegend(pal = pal,
+            values = merged_snapped$n,
+            position = "bottomright",
+            title = "Number of establishments on road")
+
+
 
 
