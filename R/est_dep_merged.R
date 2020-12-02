@@ -10,7 +10,7 @@ my_establishment_data <- readRDS("data/my_establishment_data.rds")
 establishment_dep_merged <- merge(my_establishment_data, full_postcode_dep_data, by.x = "postcode", by.y = "pcds")
 
 establishment_dep_merged  <- establishment_dep_merged %>%
-  filter(rating %in% 1:5)
+  filter(rating %in% 0:5)
 
 establishment_dep_merged[,12] <- as.numeric(as.character(establishment_dep_merged[,12]))
 
@@ -81,3 +81,19 @@ summary(compareclm)
 
 
 tinytex::install_tinytex()
+
+
+
+new <- establishment_dep_merged %>%
+  mutate(raw = s_hygiene + s_structural + s_management)
+
+
+
+leaflet(new) %>%
+  addTiles() %>%
+  addMarkers()
+
+mapshot()
+
+
+
