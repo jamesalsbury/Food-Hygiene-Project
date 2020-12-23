@@ -12,21 +12,23 @@ library(sf)
 library(RColorBrewer)
 
 postcodeAreas <- c("AL" ,"B", "BA" ,"BB" ,"BD" ,"BH" ,"BL" ,"BN" ,"BR" ,"BS", "CA", "CB",
-                   "CF" ,"CH", "CM" ,"CO" ,"CR" ,"CT" ,"CV", "CW", "DA" ,"DE" ,"DH",
+                  "CH", "CM" ,"CO" ,"CR" ,"CT" ,"CV", "CW", "DA" ,"DE" ,"DH",
                    "DL", "DN", "DT", "DY", "E" ,"EC", "EN" ,"EX", "FY","GL" ,
                    "GU", "HA", "HD" ,"HG", "HP", "HR","HU", "HX", "IG", "IP",
-                   "KT", "L", "LA", "LD", "LE", "LL" ,"LN", "LS", "LU" ,"M", "ME", "MK",
-                   "N", "NE" ,"NG" ,"NN", "NP", "NR", "NW", "OL", "OX", "PE",
-                   "PL", "PO", "PR", "RG", "RH", "RM", "S", "SA", "SE", "SG", "SK", "SL", "SM",
-                   "SN", "SO", "SP", "SR", "SS", "ST", "SW", "SY", "TA", "TF", "TN", "TQ",
+                   "KT", "L", "LA", "LE" ,"LN", "LS", "LU" ,"M", "ME", "MK",
+                   "N", "NE" ,"NG" ,"NN", "NR", "NW", "OL", "OX", "PE",
+                   "PL", "PO", "PR", "RG", "RH", "RM", "S", "SE", "SG", "SK", "SL", "SM",
+                   "SN", "SO", "SP", "SR", "SS", "ST", "SW", "TA", "TF", "TN", "TQ",
                    "TR", "TS", "TW", "UB", "W", "WA", "WC", "WD", "WF", "WN", "WR", "WS", "WV",
                    "YO")
-bad_areas = c(10, 19, 31, 49)
+bad_areas = c(10, 18, 30)
 goodPostcodeAreas = postcodeAreas[-bad_areas]
 badPostcodeAreas = postcodeAreas[bad_areas]
-Eng_Wal_NI_data = readRDS(file = "data/Eng_Wal_NI_data.rds")
-notRawNA <- Eng_Wal_NI_data %>%
-  filter(!is.na(rawScore))
+#Eng_Wal_NI_data = readRDS(file = "data/Eng_Wal_NI_data.rds")
+#notRawNA <- Eng_Wal_NI_data %>%
+  #filter(!is.na(rawScore))
+establishment_dep_merged = readRDS(file = "data/establishment_dep_merged.rds")
+
 
 sp_poly = list()
 postcode_data = list()
@@ -52,7 +54,7 @@ for (i in seq_along(badPostcodeAreas)) {
 
 for (i in seq_along(postcodeAreas)) {
   #Get the postcode data, only numeric values
-  postcode_data[[postcodeAreas[i]]] <- notRawNA %>%
+  postcode_data[[postcodeAreas[i]]] <- establishment_dep_merged %>%
     filter(postcodeArea == postcodeAreas[i])
 
   postcode_data[[postcodeAreas[i]]] <- postcode_data[[postcodeAreas[i]]] %>%
@@ -63,37 +65,37 @@ for (i in seq_along(postcodeAreas)) {
   #Get a summary of the postcode data
   postcode_summary[[postcodeAreas[i]]] <- postcode_data[[postcodeAreas[i]]] %>%
     group_by(postcodeDistrict) %>%
-    summarise(mean = mean(rating), sd = sd(rating), count = n(), median = median(rating), raw = mean(rawScore))
+    summarise(mean = mean(rating), sd = sd(rating), count = n(), median = median(rating))
 
 
-  for (j in 0:5){
-    temp <- postcode_data[[postcodeAreas[i]]] %>%
-      group_by(postcodeDistrict) %>%
-      filter(rating==j) %>%
-      count()
-
-    if (j==0){
-      temp <- rename(temp, zero.count=n)
-    }
-    if (j==1){
-      temp <- rename(temp, one.count=n)
-    }
-    if (j==2){
-      temp <- rename(temp, two.count=n)
-    }
-    if (j==3){
-      temp <- rename(temp, three.count=n)
-    }
-    if (j==4){
-      temp <- rename(temp, four.count=n)
-    }
-    if (j==5){
-      temp <- rename(temp, five.count=n)
-    }
-    if (nrow(temp)!=0){
-      postcode_summary[[postcodeAreas[i]]] <-  full_join(postcode_summary[[postcodeAreas[i]]], temp)
-    }
-  }
+  # for (j in 0:5){
+  #   temp <- postcode_data[[postcodeAreas[i]]] %>%
+  #     group_by(postcodeDistrict) %>%
+  #     filter(rating==j) %>%
+  #     count()
+  #
+  #   if (j==0){
+  #     temp <- rename(temp, zero.count=n)
+  #   }
+  #   if (j==1){
+  #     temp <- rename(temp, one.count=n)
+  #   }
+  #   if (j==2){
+  #     temp <- rename(temp, two.count=n)
+  #   }
+  #   if (j==3){
+  #     temp <- rename(temp, three.count=n)
+  #   }
+  #   if (j==4){
+  #     temp <- rename(temp, four.count=n)
+  #   }
+  #   if (j==5){
+  #     temp <- rename(temp, five.count=n)
+  #   }
+  #   if (nrow(temp)!=0){
+  #     postcode_summary[[postcodeAreas[i]]] <-  full_join(postcode_summary[[postcodeAreas[i]]], temp)
+  #   }
+  # }
 
 
   #Merge the spatial and postcode summary data
@@ -103,8 +105,8 @@ for (i in seq_along(postcodeAreas)) {
 }
 
 #Make the non-connecting districts have the same data
-badDistricts <- c(9, 25, 27, 70)
-badNames <- c(2, 7, 33, 57)
+badDistricts <- c(9, 22, 27)
+badNames <- c(2, 7, 33)
 for (i in seq_along(badPostcodeAreas)) {
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i],]$mean = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 2]]
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i] + 1,]$mean = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 2]]
@@ -116,31 +118,30 @@ for (i in seq_along(badPostcodeAreas)) {
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i] + 1,]$median = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 5]]
 }
 
-
-for (i in seq_along(postcodeAreas)) {
-  if (ncol(merged_sp_summary[[postcodeAreas[i]]]@data)==12){
-    merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
-      mutate(zero.count = 0)
-  }
-
-  merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
-    mutate(zero.percent = zero.count/count)
-
-  merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
-    mutate(one.percent = one.count/count)
-
-  merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
-    mutate(two.percent = two.count/count)
-
-  merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
-    mutate(three.percent = three.count/count)
-
-  merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
-    mutate(four.percent = four.count/count)
-
-  merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
-    mutate(five.percent = five.count/count)
-}
+# for (i in seq_along(postcodeAreas)) {
+#   if (ncol(merged_sp_summary[[postcodeAreas[i]]]@data)==12){
+#     merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
+#       mutate(zero.count = 0)
+#   }
+#
+#   merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
+#     mutate(zero.percent = zero.count/count)
+#
+#   merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
+#     mutate(one.percent = one.count/count)
+#
+#   merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
+#     mutate(two.percent = two.count/count)
+#
+#   merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
+#     mutate(three.percent = three.count/count)
+#
+#   merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
+#     mutate(four.percent = four.count/count)
+#
+#   merged_sp_summary[[postcodeAreas[i]]]@data <- merged_sp_summary[[postcodeAreas[i]]]@data %>%
+#     mutate(five.percent = five.count/count)
+# }
 
 #Merge all of the data together
 for (i in seq_along(postcodeAreas)) {
@@ -151,8 +152,10 @@ for (i in seq_along(postcodeAreas)) {
   }
 }
 
-bins <- seq(3, 5, , by = 0.25)
-pal_sb <- colorBin("RdYlGn", domain = All_postcodes_merged$mean, bins = bins)
+
+
+bins <- seq(3.5, 5, by = 0.25)
+pal_sb <- colorBin("RdYlGn", domain = All_postcodes_merged$mean, bins=bins)
 mytext <- paste0(
   "Area: ", All_postcodes_merged@data$name,"<br/>",
   "Count in area: ", All_postcodes_merged@data$count, "<br/>",
@@ -162,21 +165,18 @@ mytext <- paste0(
 leaflet() %>%
   setView(lng = -0.75, lat = 53, zoom = 8) %>%
   addTiles() %>%
+  addScaleBar() %>%
   addPolygons(data = All_postcodes_merged,
               fillColor = ~pal_sb(All_postcodes_merged$mean),
               weight = 2,
-              opacity = 1,
+              opacity = 0.2,
               label = mytext,
-              color = "yellow",
+              color = "white",
               dashArray = "3",
-              fillOpacity = 0.7) %>%
+              fillOpacity = 0.5) %>%
   addLegend(pal = pal_sb,
             values = All_postcodes_merged$mean,
             position = "bottomright",
             title = "Mean hygiene rating")
-
-
-
-
 
 

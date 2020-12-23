@@ -26,14 +26,30 @@ establishment_dep_merged <- establishment_dep_merged %>%
          |str_detect(name,"(?i)^Harvester", ) | str_detect(name,"(?i)^TGI F", ) | str_detect(name,"(?i)^Papa J", ) | str_detect(name,"(?i)^Asda", )
          |str_detect(name,"(?i)^Tesco", ) | str_detect(name,"(?i)^Morrison", ) | str_detect(name,"(?i)^Sainsbury", ))
 
+establishment_dep_merged[,12] <- as.factor(as.character(establishment_dep_merged[,12]))
+
 
 
 #Ordinal regression
 establishment_dep_merged[,12] <- as.factor(as.character(establishment_dep_merged[,12]))
-ordinal <- polr(formula = rating~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+type, data = establishment_dep_merged)
-clm <- clm(formula = rating~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+type, data = establishment_dep_merged)
+ordinal <- polr(formula = rating~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`), data = establishment_dep_merged)
+clm <- clm(formula = rating~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)*type, data = establishment_dep_merged)
 summary(clm)
-summary(ordinal)
+summary(ordinal2)
+
+
+ordinal1 <- polr(formula = rating~chain, data = establishment_dep_merged, Hess = T)
+summary(ordinal1)
+
+establishment_dep_merged$rating
+
+?ordinal
+
+
+exp(coef(ordinal))
+
+
+
 
 
 #Pulling out chains
@@ -94,6 +110,5 @@ leaflet(new) %>%
   addMarkers()
 
 mapshot()
-
 
 
