@@ -11,7 +11,7 @@ library(dplyr)
 
 #Getting the establishment data
 All_data = vector(mode="numeric",length=1)
-for (i in 1:500){
+for (i in 1:700){
   #Get establishment data
   path <- "http://api.ratings.food.gov.uk/Establishments"
   request <- GET(url = path,
@@ -58,7 +58,7 @@ for (i in 1:500){
 }
 
 # #Get the authority data
-# # submit the request
+# #submit the request
 # path <- "http://api.ratings.food.gov.uk/Authorities"
 # request <- GET(url = path,
 #                query = list(
@@ -67,13 +67,13 @@ for (i in 1:500){
 #                  pageSize = 10000),
 #                add_headers("x-api-version" = "2"))
 #
-# # parse the response and convert to a data frame
+# # # parse the response and convert to a data frame
 # response <- content(request, as = "text", encoding = "UTF-8") %>%
 #   fromJSON(flatten = TRUE) %>%
 #   pluck("authorities") %>%
 #   as_tibble()
 #
-# # tidy the data
+# # # tidy the data
 # df <- response %>%
 #   mutate_all(funs(replace(., . == '', NA))) %>%
 #   select(name = Name,
@@ -81,22 +81,23 @@ for (i in 1:500){
 #          count = EstablishmentCount)
 #
 # AuthorityData <- df
+# #
+# Region <- vector(mode="character", length = nrow(All_data_19_Oct))
+# #
+# All_data_19_Oct <- All_data_19_Oct %>%
+#  add_column(Region)
 #
-# Region <- vector(mode="character", length = nrow(All_data))
-#
-# All_data <- All_data %>%
-#   add_column(Region)
-
-# for (i in i:nrow(All_data)){
+# for (i in 67508:nrow(All_data_19_Oct)){
 #   for (j in 1:nrow(AuthorityData)){
-#     if (All_data$authorityName[i]==AuthorityData$name[j]){
-#       All_data$Region[i] = AuthorityData$region[j]
+#     if (All_data_19_Oct$authorityName[i]==AuthorityData$name[j]){
+#       All_data_19_Oct$Region[i] = AuthorityData$region[j]
 #       break
 #     }
 #   }
 # }
 #
-#
+# All_data_19_Oct
+
 # Eng_Wal_NI_data <- All_data %>%
 #   filter(Region!="Scotland")
 
@@ -108,12 +109,13 @@ All_data <- All_data  %>%
 
 #Change date!!
 
-All_data_14_Dec <- All_data
+All_data_1_Feb <- All_data
 
-saveRDS(All_data_14_Dec, file = "data/API_dated/All_data_14_Dec.rds")
+saveRDS(All_data_1_Feb, file = "data/API_dated/All_data_1_Feb.rds")
 
+All_data_18_Jan
 
-
+All_data_25_Jan
 
 
 
