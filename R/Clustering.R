@@ -80,6 +80,8 @@ library(tidyverse)
 # MeanData <- MeanData %>%
 #   mutate(OverallRaw = s_hygiene + s_structural + s_management)
 
+MeanData <- readRDS("data/MeanData.rds")
+
 myrawsummary <- MeanData %>%
   group_by(OverallRaw) %>%
   summarise(rating = mean(MeanRatingCluster), hygiene = mean(MeanHygieneCluster), structural=mean(MeanStructuralCluster),management = mean(MeanManagementCluster))

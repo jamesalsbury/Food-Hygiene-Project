@@ -113,9 +113,7 @@ All_data_1_Feb <- All_data
 
 saveRDS(All_data_1_Feb, file = "data/API_dated/All_data_1_Feb.rds")
 
-All_data_18_Jan
 
-All_data_25_Jan
 
 
 
