@@ -57,49 +57,46 @@ for (i in 1:700){
   All_data = rbind(All_data, df)
 }
 
-# #Get the authority data
-# #submit the request
-# path <- "http://api.ratings.food.gov.uk/Authorities"
-# request <- GET(url = path,
-#                query = list(
-#                  localAuthorityId =1,
-#                  pageNumber = 1,
-#                  pageSize = 10000),
-#                add_headers("x-api-version" = "2"))
-#
-# # # parse the response and convert to a data frame
-# response <- content(request, as = "text", encoding = "UTF-8") %>%
-#   fromJSON(flatten = TRUE) %>%
-#   pluck("authorities") %>%
-#   as_tibble()
-#
-# # # tidy the data
-# df <- response %>%
-#   mutate_all(funs(replace(., . == '', NA))) %>%
-#   select(name = Name,
-#          region = RegionName,
-#          count = EstablishmentCount)
-#
-# AuthorityData <- df
-# #
-# Region <- vector(mode="character", length = nrow(All_data_19_Oct))
-# #
-# All_data_19_Oct <- All_data_19_Oct %>%
-#  add_column(Region)
-#
-# for (i in 67508:nrow(All_data_19_Oct)){
-#   for (j in 1:nrow(AuthorityData)){
-#     if (All_data_19_Oct$authorityName[i]==AuthorityData$name[j]){
-#       All_data_19_Oct$Region[i] = AuthorityData$region[j]
-#       break
-#     }
-#   }
-# }
-#
-# All_data_19_Oct
+#Get the authority data
+#submit the request
+path <- "http://api.ratings.food.gov.uk/Authorities"
+request <- GET(url = path,
+               query = list(
+                 localAuthorityId =1,
+                 pageNumber = 1,
+                 pageSize = 10000),
+               add_headers("x-api-version" = "2"))
 
-# Eng_Wal_NI_data <- All_data %>%
-#   filter(Region!="Scotland")
+# # parse the response and convert to a data frame
+response <- content(request, as = "text", encoding = "UTF-8") %>%
+  fromJSON(flatten = TRUE) %>%
+  pluck("authorities") %>%
+  as_tibble()
+
+# # tidy the data
+df <- response %>%
+  mutate_all(funs(replace(., . == '', NA))) %>%
+  select(name = Name,
+         region = RegionName,
+         count = EstablishmentCount)
+
+AuthorityData <- df
+
+Region <- vector(mode="character", length = nrow(All_data_19_Oct))
+#
+All_data_19_Oct <- All_data_19_Oct %>%
+ add_column(Region)
+
+for (i in 1:nrow(All_data_19_Oct)){
+  for (j in 1:nrow(AuthorityData)){
+    if (All_data_19_Oct$authorityName[i]==AuthorityData$name[j]){
+      All_data_19_Oct$Region[i] = AuthorityData$region[j]
+      break
+    }
+  }
+}
+
+
 
 All_data <- All_data  %>%
   mutate(postcodeArea = str_extract(postcode, "[A-Z]+"))
@@ -112,8 +109,6 @@ All_data <- All_data  %>%
 All_data_1_Feb <- All_data
 
 saveRDS(All_data_1_Feb, file = "data/API_dated/All_data_1_Feb.rds")
-
-
 
 
 
