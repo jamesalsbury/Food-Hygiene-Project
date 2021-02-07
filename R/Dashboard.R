@@ -4,8 +4,11 @@ library(tidyverse)
 
 All_data_19_Oct <- readRDS("data/API_dated/All_data_19_Oct.rds")
 
+AuthorityData <- readRDS("data/Authority_Data.rds")
+
 mysample <- All_data_19_Oct[sample(nrow(All_data_19_Oct), nrow(All_data_19_Oct)/100), ]
 
+saveRDS(AuthorityData, file="data/Au")
 
 Regions <- mysample %>%
   count(Region)
