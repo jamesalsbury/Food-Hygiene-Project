@@ -3,7 +3,8 @@ library(tidyverse)
 library(leaflet)
 library(ggplot2)
 
-All_postcode_areas_merged <- readRDS("data/ShinyData/All_postcode_areas_merged.rds")
+getwd()
+All_postcode_areas_merged <- readRDS("Shiny/All_postcode_areas_merged.rds")
 ZoomReferenceTable <- readRDS("data/ShinyData/ZoomReferenceTable.rds")
 merged_sp_summary <- readRDS("data/ShinyData/merged_sp_summary.rds")
 postcodeAreas <- readRDS("data/ShinyData/postcodeAreas.rds")
@@ -101,7 +102,7 @@ AreaClicked <<- F
         #We have now zoomed into the map
         ZoomedIn <<- T
       } else { #If we have already zoomed into the map
-        if (as.numeric(click$id) %in% 1:104){ #Work out whether we have clicked on a postcode area or district
+        if (str_detect(click$id, "[A-Z]", negate = TRUE)){ #Work out whether we have clicked on a postcode area or district
           AreaClicked <<- T #If we have clicked on an area then areaclicked = T
         }
 

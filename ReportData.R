@@ -139,14 +139,15 @@ for (i in seq_along(postcodeAreas)) {
     filter(postcodeArea == postcodeAreas[i])
 
   postcode_data[[postcodeAreas[i]]] <- postcode_data[[postcodeAreas[i]]] %>%
-    filter(rating %in% 0:5)
+    filter(rating %in% 0:5) %>%
+    filter(OverallRaw %in% 0:80)
 
   postcode_data[[postcodeAreas[i]]]$rating <- as.numeric(as.character(postcode_data[[postcodeAreas[i]]]$rating))
 
   #Get a summary of the postcode data
   postcode_summary[[postcodeAreas[i]]] <- postcode_data[[postcodeAreas[i]]] %>%
     group_by(postcodeDistrict) %>%
-    summarise(mean = mean(rating), sd = sd(rating), count = n())
+    summarise(mean = mean(rating), sd = sd(rating), count = n(), rawmean = mean(OverallRaw))
 
 
   #Merge the spatial and postcode summary data
@@ -165,6 +166,8 @@ for (i in seq_along(badPostcodeAreas)) {
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i] + 1,]$sd = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 3]]
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i],]$count = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 4]]
   merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i] + 1,]$count = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 4]]
+  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i],]$rawmean = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 5]]
+  merged_sp_summary[[badPostcodeAreas[i]]]@data[badNames[i] + 1,]$rawmean = postcode_summary[[badPostcodeAreas[i]]][[badDistricts[i], 5]]
 }
 
 
@@ -254,3 +257,5 @@ summary(mymodel)
 
 EstDepMerged %>%
   count(chain)
+
+
