@@ -9,8 +9,19 @@ ZoomReferenceTable <- readRDS("data/ZoomReferenceTable.rds")
 merged_sp_summary <- readRDS("data/merged_sp_summary.rds")
 postcodeAreas <- readRDS("data/postcodeAreas.rds")
 All_data_19_Oct <- readRDS("data/All_data_19_Oct.rds")
-mycolourpalette <- c("grey", "red", "blue")
+mycolourpalette <- c("grey", "salmon", "cornflowerblue")
+myratingpalette <- c("green", "lightgreen", "yellow", "orange", "red", "darkred")
+my.options <- c('5', '4', '3', '2', '1', '0')
 
+
+my.fun <- function() {
+  res <- list()
+  for (o in my.options) {
+    res[[length(res)+1]] <- tags$span(o,
+                                      style = paste0('color: ', myratingpalette[which(my.options == o)],';'))
+  }
+  res
+}
 
 ui <- fluidPage(
 
@@ -20,6 +31,8 @@ ui <- fluidPage(
 
     sidebarPanel(
       checkboxInput(inputId = "esttoggle", label = "Establishments?"),
+      conditionalPanel(condition = "input.esttoggle==1", checkboxGroupInput("ratingschosen",
+                     label = c("Choose ratings to view"), choiceNames = my.fun(), choiceValues = myratingpalette)),
       uiOutput(outputId = "mytextoutput"),
       tableOutput(outputId = "mysummarystats"),
       selectInput(inputId = "mychoices", label = "Plot?", choices = c("Ratings", "Overall ratings")),
@@ -174,6 +187,15 @@ AreaClicked <<- FALSE
             }
           }
 
+          MyMarkers <- All_data_19_Oct %>%
+            filter(postcodeDistrict==click$id) %>%
+            filter(rating %in% 0:5) %>%
+            filter(OverallRaw %in% 0:80) %>%
+            drop_na(long) %>%
+            drop_na(lat) %>%
+            st_as_sf(coords = c("long", "lat"), crs = 4326) %>%
+            st_jitter(factor = 0.001)
+
         #We need to turn the polygon of the district we clicked blue
 
 
@@ -230,29 +252,34 @@ AreaClicked <<- FALSE
           #We need to add establishments if toggle if true
 
 
-          MyMarkers <- All_data_19_Oct %>%
-            filter(postcodeDistrict==click$id) %>%
-            filter(rating %in% 0:5) %>%
-            filter(OverallRaw %in% 0:80) %>%
-            drop_na(long) %>%
-            drop_na(lat) %>%
-            st_as_sf(coords = c("long", "lat"), crs = 4326) %>%
-            st_jitter(factor = 0.001)
 
-          mytext3 <- paste0(
-            "Name: ", MyMarkers$name,"<br/>",
-            "Rating: ", MyMarkers$rating, "<br/>",
-            "Raw rating: ", MyMarkers$OverallRaw) %>%
-            lapply(htmltools::HTML)
+
+
 
 
           #Show the establishments if toggle = TRUE
           observe({
-            proxy <- leafletProxy("map", data = MyMarkers)
+            proxy <- leafletProxy("map")
             proxy %>%
               clearMarkers()
             if (input$esttoggle) { #If TRUE
-              proxy %>% addMarkers(label = mytext3)
+              if (length(input$ratingschosen)!=0){
+                chosenvec <- input$ratingschosen
+                proxy %>%
+                  clearMarkers()
+                for (i in 1:length(chosenvec)){
+                  ratingchosen <- my.options[which(chosenvec[i]== myratingpalette)]
+                  temp <- MyMarkers %>%
+                    filter(rating==ratingchosen)
+                  mytext3 <- paste0(
+                    "Name: ", temp$name,"<br/>",
+                    "Rating: ", temp$rating, "<br/>",
+                    "Raw rating: ", temp$OverallRaw) %>%
+                    lapply(htmltools::HTML)
+                  proxy %>%
+                    addCircleMarkers(data = temp, label = mytext3, col = chosenvec[i])
+                }
+              }
             }
           })
 
@@ -307,26 +334,31 @@ AreaClicked <<- FALSE
            })
            output$ratingsplot <- renderPlot({
                if (input$mychoices == "Ratings"){
-                 myRatings <- All_data_19_Oct %>%
-                   filter(postcodeDistrict==click$id) %>%
-                   count(rating) %>%
-                   filter(rating %in% 0:5)
+                 myRatings <- MyMarkers %>%
+                   count(rating)
 
-                  ggplot(data = myRatings, aes(rating, n)) + geom_bar(stat = "identity", fill = "steelblue") +
+                 colourvec <- vector(length = nrow(myRatings))
+                 for (i in 1:nrow(myRatings)){
+                   colourvec[i] <- myratingpalette[which(myRatings$rating[i]==my.options)]
+
+                 }
+
+                 myRatings <- myRatings %>%
+                   add_column(colourvec)
+
+                 ggplot(data = myRatings, aes(rating, n)) + geom_bar(stat = "identity", fill=colourvec) +
                    ylab("Count") +  xlab("Rating") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
                } else {
 
-
-                 OverallRawCount <- All_data_19_Oct %>%
-                   filter(postcodeDistrict==click$id) %>%
-                   filter(rating %in% 0:5) %>%
+                 OverallRawCount <- MyMarkers %>%
                    group_by(rating) %>%
                    count(OverallRaw)
 
-                 ggplot(data = OverallRawCount, aes(x = OverallRaw, y = n, fill=rating)) +
-                   geom_bar(stat="identity") + ylab("Count") +
-                   xlab("Overall score") + theme_classic() + labs(fill="Rating")
+                OverallRawCount$rating <- as_factor(OverallRawCount$rating)
 
+                 ggplot(data = OverallRawCount, aes(x = OverallRaw, y = n, fill = rating)) +
+                   geom_bar(stat="identity") + ylab("Count") +
+                   xlab("Overall score") + theme_classic() + scale_fill_manual(breaks=c('5', '4', '3', '2', '1', '0'), values = c("green", "lightgreen", "yellow", "orange", "red", "darkred"))
 
 
              }
@@ -343,5 +375,3 @@ AreaClicked <<- FALSE
 }
 
 shinyApp(ui = ui, server = server)
-
-

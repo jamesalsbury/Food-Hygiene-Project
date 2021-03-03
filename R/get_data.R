@@ -106,11 +106,12 @@ All_data <- All_data  %>%
 
 #Change date!!
 
-All_data_22_Feb <- All_data
+All_data_1_Mar <- All_data
 
-saveRDS(All_data_22_Feb, file = "data/API_dated/All_data_22_Feb.rds")
+saveRDS(All_data_1_Mar, file = "data/API_dated/All_data_1_Mar.rds")
 
 #Might be needed!!
 getwd()
 setwd("/Users/jamesalsbury/Food-Hygiene-Project")
 
+nrow(All_data) - nrow(All_data_19_Oct)
