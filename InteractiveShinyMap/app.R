@@ -34,7 +34,8 @@ ui <- fluidPage(
       conditionalPanel(condition = "input.esttoggle==1", checkboxGroupInput("ratingschosen",
                      label = c("Choose ratings to view"), choiceNames = my.fun(), choiceValues = myratingpalette)),
       uiOutput(outputId = "mytextoutput"),
-      tableOutput(outputId = "mysummarystats"),
+      tableOutput(outputId = "mysummarystats1"),
+      tableOutput(outputId = "mysummarystats2"),
       selectInput(inputId = "mychoices", label = "Plot?", choices = c("Ratings", "Overall ratings")),
       plotOutput(outputId = "ratingsplot")
     ),
@@ -312,7 +313,7 @@ AreaClicked <<- FALSE
                        '<br>', "Mean raw rating for ", str_extract(click$id, "[A-Z]+"), ":", round(Chosen_area_raw_mean,2)))
           })
 
-           output$mysummarystats <- renderTable({
+           output$mysummarystats1 <- renderTable({
              for (i in 1:length(postcodeAreas)){
                if (str_extract(click$id, "[A-Z]+") == postcodeAreas[i]){
                  break
@@ -325,11 +326,59 @@ AreaClicked <<- FALSE
                }
              }
 
-             data.frame(Mean = merged_sp_summary[[i]]@data[j,]$mean,
-                        StandardDeviation = merged_sp_summary[[i]]@data[j,]$sd,
-                        Count = merged_sp_summary[[i]]@data[j,]$count,
-                        RawMean = merged_sp_summary[[i]]@data[j,]$rawmean)
+             Eng_Wal_rating_mean <- All_data_19_Oct %>%
+               filter(rating %in% 0:5) %>%
+               summarise(mean = mean(rating))
 
+             Chosen_area_rating_mean <- All_data_19_Oct %>%
+               filter(postcodeArea==str_extract(click$id, "[A-Z]+")) %>%
+               filter(rating %in% 0:5) %>%
+               summarise(mean = mean(rating))
+
+
+             df <- data.frame(CountryMean = Eng_Wal_rating_mean,
+                        AreaMean = Chosen_area_rating_mean,
+               DistrictMean = merged_sp_summary[[i]]@data[j,]$mean,
+             Count = merged_sp_summary[[i]]@data[j,]$count)
+
+             names(df) <- c("Mean rating for Eng and Wal", paste("Mean rating for ", str_extract(click$id, "[A-Z]+")), paste("Mean rating for ", click$id), "Count")
+
+             return(df)
+
+
+
+           })
+
+           output$mysummarystats2 <- renderTable({
+             for (i in 1:length(postcodeAreas)){
+               if (str_extract(click$id, "[A-Z]+") == postcodeAreas[i]){
+                 break
+               }
+             }
+
+             for (j in 1:length(merged_sp_summary[[i]])){
+               if (click$id == merged_sp_summary[[i]]@data$name[j]){
+                 break
+               }
+             }
+
+             Eng_Wal_raw_mean <-All_data_19_Oct %>%
+               filter(OverallRaw %in% 0:80) %>%
+               summarise(mean = mean(OverallRaw))
+
+             Chosen_area_raw_mean <- All_data_19_Oct %>%
+               filter(postcodeArea==str_extract(click$id, "[A-Z]+")) %>%
+               filter(OverallRaw %in% 0:80) %>%
+               summarise(mean = mean(OverallRaw))
+
+
+             df <- data.frame(RawEngWales = Eng_Wal_raw_mean,
+                        AreaRaw = Chosen_area_raw_mean,
+                        DistrictRaw = merged_sp_summary[[i]]@data[j,]$rawmean)
+
+            names(df) <- c("Raw Mean for Eng and Wal", paste("Raw Mean for ", str_extract(click$id, "[A-Z]+")), paste("Raw Mean for ", click$id))
+
+             return(df)
 
            })
            output$ratingsplot <- renderPlot({
