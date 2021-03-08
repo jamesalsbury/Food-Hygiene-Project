@@ -25,7 +25,7 @@ library(tidyverse)
 #
 # dist <- sqrt((Deli$lat-St_Sushi$lat)^2+(Deli$long-St_Sushi$long)^2)
 # fivehundredmetres <- (dist/3270)*500
-#
+
 #
 # MeanRatingCluster <- vector(length=nrow(NewcCluster))
 # MeanHygieneCluster <- vector(length=nrow(NewcCluster))
@@ -162,24 +162,96 @@ library(tidyverse)
 # plot(SheffMeanCluster$rating, SheffMeanCluster$MeanRatingCluster)
 
 SheffMeanCluster <- readRDS("data/SheffMeanCluster.rds")
-
+SheffMeanCluster$OverallRaw = as.numeric(levels(SheffMeanCluster$OverallRaw))[SheffMeanCluster$OverallRaw]
 myrawsummary <- SheffMeanCluster %>%
   group_by(OverallRaw) %>%
-  summarise(rating = mean(MeanRatingCluster), hygiene = mean(MeanHygieneCluster), structural=mean(MeanStructuralCluster),management = mean(MeanManagementCluster), count=n())
+  summarise(meanrating = mean(MeanRatingCluster), hygiene = mean(MeanHygieneCluster), structural=mean(MeanStructuralCluster),management = mean(MeanManagementCluster), count=n())
 
 
-plot(myrawsummary$rating, myrawsummary$OverallRaw, ylab = "Raw score (lower the better)", xlab = "Mean rating of nearby establishments (higher the better)")
-abline(lm(myrawsummary$OverallRaw~myrawsummary$rating))
+plot(myrawsummary$meanrating, myrawsummary$OverallRaw, ylab = "Raw score (lower the better)", xlab = "Mean rating of nearby establishments (higher the better)")
+abline(lm(myrawsummary$OverallRaw~myrawsummary$meanrating))
 plot(myrawsummary$hygiene, myrawsummary$OverallRaw, ylab = "Raw score (lower the better)", xlab = "Mean hygiene of nearby establishments (lower the better)")
 abline(lm(myrawsummary$OverallRaw~myrawsummary$hygiene))
 plot(myrawsummary$structural, myrawsummary$OverallRaw, ylab = "Raw score (lower the better)", xlab = "Mean structural of nearby establishments (lower the better)")
 abline(lm(myrawsummary$OverallRaw~myrawsummary$structural))
 plot(myrawsummary$management, myrawsummary$OverallRaw, ylab = "Raw score (lower the better)", xlab = "Mean management of nearby establishments (lower the better)")
 abline(lm(myrawsummary$OverallRaw~myrawsummary$management))
+plot(m)
 
 
-myrawsummary$OverallRaw = as_factor(myrawsummary$OverallRaw)
+
 ggplot(SheffMeanCluster, aes(x = OverallRaw, y  = MeanRatingCluster)) + geom_boxplot()
 
-SheffMeanCluster$OverallRaw <- as_factor(SheffMeanCluster$OverallRaw)
+
+
+
+####################################
+#Doing the Sheffield data again
+###################################
+library(tidyverse)
+
+
+S1Data <- All_data_19_Oct %>%
+  filter(postcodeDistrict=="S1") %>%
+  filter(!is.na(long)) %>%
+   filter(!is.na(lat)) %>%
+  filter(rating %in% 0:5) %>%
+  filter(OverallRaw %in% 0:80)
+
+S1Data$rating <- as.numeric(S1Data$rating)
+MeanRatingCluster <- vector(length=nrow(S1Data))
+MeanHygieneCluster <- vector(length=nrow(S1Data))
+MeanStructuralCluster <- vector(length=nrow(S1Data))
+MeanManagementCluster <- vector(length=nrow(S1Data))
+MeanOverallRawCluster <- vector(length=nrow(S1Data))
+fivehundredmetres = 0.004652264
+
+for (i in 1:nrow(S1Data)){
+  NumCluster <- 0
+  NumRating <- 0
+  NumHygiene <- 0
+  NumStructural <- 0
+  NumMangement <- 0
+  NumRaw <- 0
+  for (j in 1:nrow(S1Data)){
+    if (i!=j){
+      CalcDist <- sqrt((S1Data[i,]$lat - S1Data[j,]$lat)^2+(S1Data[i,]$long - S1Data[j,]$long)^2)
+      if (CalcDist < fivehundredmetres){
+          NumCluster <- NumCluster + 1
+          NumRating <- NumRating + S1Data[j,]$rating
+          NumHygiene <- NumHygiene + S1Data[j,]$s_hygiene
+          NumStructural <- NumStructural + S1Data[j,]$s_structural
+          NumMangement <- NumMangement + S1Data[j,]$s_management
+          NumRaw <- NumRaw + S1Data[j,]$OverallRaw
+      }
+    }
+  }
+  if (NumCluster!=0){
+    MeanRatingCluster[i] = NumRating/NumCluster
+    MeanHygieneCluster[i] = NumHygiene/NumCluster
+    MeanStructuralCluster[i] = NumStructural/NumCluster
+    MeanManagementCluster[i] = NumMangement/NumCluster
+    MeanOverallRawCluster[i] = NumRaw/NumCluster
+  }
+  else{
+    MeanRatingCluster[i] = "None"
+    MeanHygieneCluster[i] = "None"
+    MeanStructuralCluster[i] = "None"
+    MeanManagementCluster[i] = "None"
+    MeanOverallRawCluster[i] = "None"
+  }
+}
+
+S1Data <- S1Data %>%
+  add_column(MeanOverallRawCluster)
+
+mysum <- S1Data %>%
+  group_by(OverallRaw) %>%
+  summarise(meanRating = mean(MeanRatingCluster), meanHygiene = mean(MeanHygieneCluster),
+            meanStructural = mean(MeanStructuralCluster), meanManagement = mean(MeanManagementCluster)) %>%
+  gather(meanHygiene, meanStructural, meanManagement, key = "WhichRaw", value = "Mean")
+
+ggplot(mysum) + geom_point(aes(x = Mean, y = OverallRaw,col = WhichRaw)) + ylim(0, 50) + theme_classic()
+
+saveRDS(S1Data, "data/S1Data.rds")
 

@@ -259,3 +259,51 @@ EstDepMerged %>%
   count(chain)
 
 
+
+############################################################
+############################################################
+#Clustering
+############################################################
+############################################################
+
+library(ggplot2)
+SheffMeanCluster <- readRDS("data/SheffMeanCluster.rds")
+SheffMeanCluster$OverallRaw = as.numeric(levels(SheffMeanCluster$OverallRaw))[SheffMeanCluster$OverallRaw]
+myrawsummary <- SheffMeanCluster %>%
+  group_by(OverallRaw) %>%
+  summarise(meanrating = mean(MeanRatingCluster), hygiene = mean(MeanHygieneCluster), structural=mean(MeanStructuralCluster),management = mean(MeanManagementCluster), count=n())
+
+
+ggplot(myrawsummary, aes(x = meanrating, y = OverallRaw)) + geom_point(col = "blue") + ylim(0, 50) + theme_classic() +
+  ylab("Overall Raw (Lower the better)") + xlab("Mean rating of nearby establishments (higher the better)")
+
+ggplot(myrawsummary, aes(x = hygiene, y = OverallRaw)) + geom_point(col = "blue") + ylim(0, 50) + theme_classic() +
+  ylab("Overall Raw (Lower the better)") + xlab("Hygiene rating (lower the better)")
+
+ggplot(myrawsummary, aes(x = structural, y = OverallRaw)) + geom_point(col = "blue") + ylim(0, 50) + theme_classic() +
+  ylab("Overall Raw (Lower the better)") + xlab("Structural rating (lower the better)")
+
+ggplot(myrawsummary) + geom_point(aes(x = management, y = OverallRaw),col = "blue") + ylim(0, 50) + theme_classic() +
+  ylab("Overall Raw (Lower the better)") + xlab("Management rating (lower the better)") + geom_point(data = myrawsummary, aes(x = hygiene, y = OverallRaw), col="green") +
+  geom_point(data = myrawsummary, aes(x = structural, y = OverallRaw), col="red")
+
+myrawsummary
+
+
+summary <- All_data_19_Oct %>%
+  filter(OverallRaw %in% 0:80) %>%
+  summarise(meanrating = mean(rating), hygiene = mean(s_hygiene), structural=mean(s_structural),management = mean(s_management), count=n())
+summary
+
+plot(summary$OverallRaw, summary$management)
+
+mean(All_data_19_Oct$s_hygiene)
+
+myrawsummary1 <- MeanData %>%
+  group_by(OverallRaw) %>%
+  summarise(meanrating = mean(MeanRatingCluster), hygiene = mean(MeanHygieneCluster), structural=mean(MeanStructuralCluster),management = mean(MeanManagementCluster), count=n())
+myrawsummary1
+
+ggplot(myrawsummary1) + geom_point(aes(x = management, y = OverallRaw),col = "blue") + ylim(0, 50) + theme_classic() +
+  ylab("Overall Raw (Lower the better)") + xlab("Management rating (lower the better)") + geom_point(data = myrawsummary1, aes(x = hygiene, y = OverallRaw), col="green") +
+  geom_point(data = myrawsummary1, aes(x = structural, y = OverallRaw), col="red")

@@ -3,6 +3,8 @@ library(tidyverse)
 library(leaflet)
 library(ggplot2)
 library(sf)
+library(RColorBrewer)
+'%ni%' <- Negate('%in%')
 
 All_postcode_areas_merged <- readRDS("data/All_postcode_areas_merged.rds")
 ZoomReferenceTable <- readRDS("data/ZoomReferenceTable.rds")
@@ -10,8 +12,8 @@ merged_sp_summary <- readRDS("data/merged_sp_summary.rds")
 postcodeAreas <- readRDS("data/postcodeAreas.rds")
 All_data_19_Oct <- readRDS("data/All_data_19_Oct.rds")
 mycolourpalette <- c("grey", "salmon", "cornflowerblue")
-myratingpalette <- c("green", "lightgreen", "yellow", "orange", "red", "darkred")
-my.options <- c('5', '4', '3', '2', '1', '0')
+myratingpalette <- rev(brewer.pal(n=6, name = "RdYlGn"))
+my.options <- 5:0
 
 
 my.fun <- function() {
@@ -287,30 +289,9 @@ AreaClicked <<- FALSE
 
           output$mytextoutput <- renderUI({
 
-            Eng_Wal_rating_mean <- All_data_19_Oct %>%
-              filter(rating %in% 0:5) %>%
-              summarise(mean = mean(rating))
-
-            Eng_Wal_raw_mean <-All_data_19_Oct %>%
-              filter(OverallRaw %in% 0:80) %>%
-              summarise(mean = mean(OverallRaw))
-
-            Chosen_area_rating_mean <- All_data_19_Oct %>%
-              filter(postcodeArea==str_extract(click$id, "[A-Z]+")) %>%
-              filter(rating %in% 0:5) %>%
-              summarise(mean = mean(rating))
-
-            Chosen_area_raw_mean <- All_data_19_Oct %>%
-              filter(postcodeArea==str_extract(click$id, "[A-Z]+")) %>%
-              filter(OverallRaw %in% 0:80) %>%
-              summarise(mean = mean(OverallRaw))
 
 
-
-            HTML(paste("Chosen postcode area: ", click$id, '<br>', "Mean rating for England and Wales:", round(Eng_Wal_rating_mean, 2),
-                       '<br>', "Mean raw rating for England and Wales:", round(Eng_Wal_raw_mean, 2), '<br>',
-                       "Mean rating for ", str_extract(click$id, "[A-Z]+"), ":", round(Chosen_area_rating_mean, 2),
-                       '<br>', "Mean raw rating for ", str_extract(click$id, "[A-Z]+"), ":", round(Chosen_area_raw_mean,2)))
+            HTML(paste("Chosen postcode area: ", click$id))
           })
 
            output$mysummarystats1 <- renderTable({
@@ -386,16 +367,27 @@ AreaClicked <<- FALSE
                  myRatings <- MyMarkers %>%
                    count(rating)
 
-                 colourvec <- vector(length = nrow(myRatings))
-                 for (i in 1:nrow(myRatings)){
-                   colourvec[i] <- myratingpalette[which(myRatings$rating[i]==my.options)]
+                 n <- vector(length = 6)
+                 rating = 0:5
 
-                 }
 
-                 myRatings <- myRatings %>%
-                   add_column(colourvec)
+                   for (i in 1:6){
+                     if ((i-1) %in% myRatings$rating){
+                       n[i] = myRatings[which(myRatings$rating==(i-1)),2]$n
+                     }
+                     else {
+                       n[i] = 0
+                     }
+                   }
 
-                 ggplot(data = myRatings, aes(rating, n)) + geom_bar(stat = "identity", fill=colourvec) +
+
+
+
+
+
+                 myRatings <- data.frame(rating = rating, count = as.numeric(n), colourvec = rev(myratingpalette))
+
+                 ggplot(data = myRatings, aes(rating, count)) + geom_bar(stat = "identity", fill=rev(myratingpalette)) +
                    ylab("Count") +  xlab("Rating") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
                } else {
 
@@ -407,7 +399,7 @@ AreaClicked <<- FALSE
 
                  ggplot(data = OverallRawCount, aes(x = OverallRaw, y = n, fill = rating)) +
                    geom_bar(stat="identity") + ylab("Count") +
-                   xlab("Overall score") + theme_classic() + scale_fill_manual(breaks=c('5', '4', '3', '2', '1', '0'), values = c("green", "lightgreen", "yellow", "orange", "red", "darkred"))
+                   xlab("Overall score") + theme_classic() + scale_fill_manual(breaks=c('5', '4', '3', '2', '1', '0'), values = c("#1A9850", "#91CF60", "#D9EF8B", "#FEE08B" ,"#FC8D59", "#D73027"))
 
 
              }
@@ -424,3 +416,26 @@ AreaClicked <<- FALSE
 }
 
 shinyApp(ui = ui, server = server)
+#
+# myRatings <- All_data_19_Oct %>%
+#   filter(postcodeDistrict=="BD23") %>%
+#   filter(rating %in% 0:5) %>%
+#   count(rating)
+#
+# n <- vector(length = 6)
+# rating = 0:5
+#
+# for (i in 1:6){
+#   if ((i-1) %in% myRatings$rating){
+#     n[i] = myRatings[which(myRatings$rating==(i-1)),2]
+#   }
+#   else {
+#     n[i] = 0
+#   }
+# }
+#
+#
+# myRatings <- data.frame(rating = rating, count = as.numeric(n), colourvec = rev(myratingpalette))
+#
+# ggplot(data = myRatings, aes(rating, count)) + geom_bar(stat = "identity", fill=rev(myratingpalette)) +
+#   ylab("Count") +  xlab("Rating") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
