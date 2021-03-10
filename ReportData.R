@@ -212,13 +212,16 @@ leaflet() %>%
 #Combining deprivation data and data set
 ############################################################
 ############################################################
-
+library(tidyverse)
 
 DepData <- read_csv("data/File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv")
 PostcodeData <- read_csv("data/PCD_OA_LSOA_MSOA_LAD_AUG20_UK_LU.csv")
 PostcodeDepMerged <- inner_join(PostcodeData, DepData, by = c("lsoa11cd" = "LSOA code (2011)"))
 All_data_19_Oct <- readRDS("data/API_dated/All_data_19_Oct.rds")
 EstDepMerged <- inner_join(All_data_19_Oct, PostcodeDepMerged, by = c("postcode" = "pcds"))
+
+# rank <- EstDepMerged$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`
+# score <- EstDepMerged$`Index of Multiple Deprivation (IMD) Score`
 
 
 ############################################################
@@ -229,7 +232,6 @@ EstDepMerged <- inner_join(All_data_19_Oct, PostcodeDepMerged, by = c("postcode"
 
 library(ordinal)
 library(MASS)
-
 
 #Identify chains
 EstDepMerged <- EstDepMerged %>%
@@ -244,9 +246,7 @@ EstDepMerged  <- EstDepMerged %>%
   filter(rating %in% 0:5)
 
 #Ensure rating is a factor
-
 EstDepMerged$rating <- as_factor(EstDepMerged$rating)
-
 EstDepMerged$rating <- fct_rev(EstDepMerged$rating)
 
 
@@ -259,6 +259,19 @@ EstDepMerged %>%
   count(chain)
 
 
+#Ordinal regression
+
+EstDepMerged$rating <- as_factor(as.character(EstDepMerged$rating))
+
+#
+clm <- clm(formula = fct_rev(rating)~`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`, data = EstDepMerged)
+summary(clm)
+clmlog <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`), data = EstDepMerged)
+summary(clmlog)
+clmtype <- clm(formula = fct_rev(rating)~type, data = EstDepMerged)
+summary(clmtype)
+clminteraction <- clmlog <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)*type, data = EstDepMerged)
+summary(clminteraction)
 
 ############################################################
 ############################################################
@@ -307,3 +320,18 @@ myrawsummary1
 ggplot(myrawsummary1) + geom_point(aes(x = management, y = OverallRaw),col = "blue") + ylim(0, 50) + theme_classic() +
   ylab("Overall Raw (Lower the better)") + xlab("Management rating (lower the better)") + geom_point(data = myrawsummary1, aes(x = hygiene, y = OverallRaw), col="green") +
   geom_point(data = myrawsummary1, aes(x = structural, y = OverallRaw), col="red")
+
+
+
+################################################
+#Summary stats deprivation data
+################################################
+
+score <- EstDepMerged$`Index of Multiple Deprivation (IMD) Score`
+score <- sort(score)
+plot(score, xlab = "LSOA sorted by score", ylab="Overall deprivation score", ylim=c(0,100))
+min(score)
+
+rank <- EstDepMerged$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`
+plot(sort(rank))
+max(rank)
