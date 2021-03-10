@@ -224,6 +224,7 @@ EstDepMerged <- inner_join(All_data_19_Oct, PostcodeDepMerged, by = c("postcode"
 # score <- EstDepMerged$`Index of Multiple Deprivation (IMD) Score`
 
 
+
 ############################################################
 ############################################################
 #Modelling of deprivation data
@@ -233,30 +234,26 @@ EstDepMerged <- inner_join(All_data_19_Oct, PostcodeDepMerged, by = c("postcode"
 library(ordinal)
 library(MASS)
 
+EstDepMerged <- readRDS("data/EstDepMerged.rds")
+
 #Identify chains
-EstDepMerged <- EstDepMerged %>%
-  mutate(chain = str_detect(name,"(?i)^Gregg", ) | str_detect(name,"(?i)^Domino", ) | str_detect(name,"(?i)^Burger King", ) | str_detect(name,"(?i)^Mcdonal", )
-         | str_detect(name,"(?i)^KFC", ) | str_detect(name,"(?i)^Pizza Hut", ) | str_detect(name,"(?i)^Subway", ) | str_detect(name,"(?i)^Costa", )
-         |str_detect(name,"(?i)^Toby Car", ) | str_detect(name,"(?i)^Bella Ital", ) | str_detect(name,"(?i)^PizzaE", ) | str_detect(name,"(?i)^Nando", )
-         |str_detect(name,"(?i)^Harvester", ) | str_detect(name,"(?i)^TGI F", ) | str_detect(name,"(?i)^Papa J", ) | str_detect(name,"(?i)^Asda", )
-         |str_detect(name,"(?i)^Tesco", ) | str_detect(name,"(?i)^Morrison", ) | str_detect(name,"(?i)^Sainsbury", ))
+# EstDepMerged <- EstDepMerged %>%
+#   mutate(chain = str_detect(name,"(?i)^Gregg", ) | str_detect(name,"(?i)^Domino", ) | str_detect(name,"(?i)^Burger King", ) | str_detect(name,"(?i)^Mcdonal", )
+#          | str_detect(name,"(?i)^KFC", ) | str_detect(name,"(?i)^Pizza Hut", ) | str_detect(name,"(?i)^Subway", ) | str_detect(name,"(?i)^Costa", )
+#          |str_detect(name,"(?i)^Toby Car", ) | str_detect(name,"(?i)^Bella Ital", ) | str_detect(name,"(?i)^PizzaE", ) | str_detect(name,"(?i)^Nando", )
+#          |str_detect(name,"(?i)^Harvester", ) | str_detect(name,"(?i)^TGI F", ) | str_detect(name,"(?i)^Papa J", ) | str_detect(name,"(?i)^Asda", )
+#          |str_detect(name,"(?i)^Tesco", ) | str_detect(name,"(?i)^Morrison", ) | str_detect(name,"(?i)^Sainsbury", ))
 
 #Only consider ratings between 0-5:
 EstDepMerged  <- EstDepMerged %>%
   filter(rating %in% 0:5)
 
 #Ensure rating is a factor
-EstDepMerged$rating <- as_factor(EstDepMerged$rating)
-EstDepMerged$rating <- fct_rev(EstDepMerged$rating)
+# EstDepMerged$rating <- as_factor(EstDepMerged$rating)
+# EstDepMerged$rating <- fct_rev(EstDepMerged$rating)
+# mymodel <- clm(formula = rating ~ chain, data = EstDepMerged, Hess = T)
+# summary(mymodel)
 
-
-mymodel <- clm(formula = rating ~ chain, data = EstDepMerged, Hess = T)
-
-
-summary(mymodel)
-
-EstDepMerged %>%
-  count(chain)
 
 
 #Ordinal regression
