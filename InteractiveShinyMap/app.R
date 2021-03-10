@@ -416,26 +416,4 @@ AreaClicked <<- FALSE
 }
 
 shinyApp(ui = ui, server = server)
-#
-# myRatings <- All_data_19_Oct %>%
-#   filter(postcodeDistrict=="BD23") %>%
-#   filter(rating %in% 0:5) %>%
-#   count(rating)
-#
-# n <- vector(length = 6)
-# rating = 0:5
-#
-# for (i in 1:6){
-#   if ((i-1) %in% myRatings$rating){
-#     n[i] = myRatings[which(myRatings$rating==(i-1)),2]
-#   }
-#   else {
-#     n[i] = 0
-#   }
-# }
-#
-#
-# myRatings <- data.frame(rating = rating, count = as.numeric(n), colourvec = rev(myratingpalette))
-#
-# ggplot(data = myRatings, aes(rating, count)) + geom_bar(stat = "identity", fill=rev(myratingpalette)) +
-#   ylab("Count") +  xlab("Rating") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
+
