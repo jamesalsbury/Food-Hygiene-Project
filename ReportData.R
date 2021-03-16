@@ -1,19 +1,21 @@
 library(tidyverse)
-
+library(RColorBrewer)
 ############################################################
-#Getting the Scotland Data
+#Getting the England only Data
 ############################################################
 
 All_data_19_Oct <-readRDS("data/API_dated/All_data_19_Oct.rds")
 
-NotScottish <- All_data_19_Oct %>%
-  filter(Region!="Scotland")
+Eng_Only_data <- All_data_19_Oct %>%
+  filter(Region!="Scotland") %>%
+  filter(Region!="Wales")
+
 
 ############################################################
 #Finding out the different types of establishments
 ############################################################
 
-EstTypeCount <- NotScottish %>%
+EstTypeCount <- Eng_Only_data %>%
   count(type)
 
 formatter1000 <- function(x){
@@ -24,34 +26,34 @@ TypeBarChart <- ggplot(data = EstTypeCount, aes(x = type, y=n)) +
   geom_bar(stat  = "identity", fill = "steelblue")  + ylab("Count") +ylim(c(0,145000)) +
   xlab("Type of establishment") + theme_classic() + geom_text(aes(label=n),hjust=-0.3) + coord_flip()
 
+
 ############################################################
 #Finding out the different ratings of establishments
 ############################################################
+myratingpalette <- rev(brewer.pal(n=6, name = "RdYlGn"))
 
-
-RatingCount <- All_data_19_Oct %>%
+RatingCount <- Eng_Only_data %>%
   filter(rating %in% 0:5) %>%
   count(rating)
 
 
-RatingBarChart <- ggplot(data = RatingCount, aes(x=rating, y=n)) + geom_bar(stat = "identity", fill = "steelblue") +
+
+RatingBarChart <- ggplot(data = RatingCount, aes(x=rating, y=n)) + geom_bar(stat = "identity", fill = rev(myratingpalette))+
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
   xlab("Rating") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
-
 
 ############################################################
 #Finding out the different raw ratings of establishments
 ############################################################
 
-OverallRawCount <- All_data_19_Oct %>%
+OverallRawCount <- Eng_Only_data %>%
   filter(rating %in% 0:5) %>%
   group_by(rating) %>%
   count(OverallRaw)
 
 RawBarChart <- ggplot(data = OverallRawCount, aes(x = OverallRaw, y = n, fill=rating)) + geom_bar(stat="identity") +
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
-  xlab("Overall score") + theme_classic() + labs(fill="Rating")
-
+  xlab("Overall score") + theme_classic() + labs(fill="Rating") + scale_fill_manual(breaks=c('5', '4', '3', '2', '1', '0'), values = c("#1A9850", "#91CF60", "#D9EF8B", "#FEE08B" ,"#FC8D59", "#D73027"))
 
 
 ############################################################
@@ -59,21 +61,21 @@ RawBarChart <- ggplot(data = OverallRawCount, aes(x = OverallRaw, y = n, fill=ra
 ############################################################
 
 
-HygieneCount <- All_data_19_Oct %>%
+HygieneCount <- Eng_Only_data %>%
   count(s_hygiene)
 
 HygieneBarCount <- ggplot(data = HygieneCount, aes(x = s_hygiene, y=n)) +  geom_bar(stat = "identity", fill = "steelblue") +
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
   xlab("Hygiene score") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
 
-StructuralCount <- All_data_19_Oct %>%
+StructuralCount <- Eng_Only_data %>%
   count(s_structural)
 
 StructuralBarCount <- ggplot(data = StructuralCount, aes(x = s_structural, y=n)) +  geom_bar(stat = "identity", fill = "steelblue") +
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
   xlab("Structural score") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
 
-ManagementCount <- All_data_19_Oct %>%
+ManagementCount <- Eng_Only_data %>%
   count(s_management)
 
 ManagementBarCount <- ggplot(data = ManagementCount, aes(x = s_management, y=n)) +  geom_bar(stat = "identity", fill = "steelblue") +
@@ -135,7 +137,7 @@ for (i in seq_along(badPostcodeAreas)) {
 
 for (i in seq_along(postcodeAreas)) {
   #Get the postcode data, only numeric values
-  postcode_data[[postcodeAreas[i]]] <- All_data_19_Oct %>%
+  postcode_data[[postcodeAreas[i]]] <- Eng_Only_data %>%
     filter(postcodeArea == postcodeAreas[i])
 
   postcode_data[[postcodeAreas[i]]] <- postcode_data[[postcodeAreas[i]]] %>%
@@ -217,13 +219,12 @@ library(tidyverse)
 DepData <- read_csv("data/File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv")
 PostcodeData <- read_csv("data/PCD_OA_LSOA_MSOA_LAD_AUG20_UK_LU.csv")
 PostcodeDepMerged <- inner_join(PostcodeData, DepData, by = c("lsoa11cd" = "LSOA code (2011)"))
-All_data_19_Oct <- readRDS("data/API_dated/All_data_19_Oct.rds")
-EstDepMerged <- inner_join(All_data_19_Oct, PostcodeDepMerged, by = c("postcode" = "pcds"))
+Eng_Only_data <- readRDS("data/API_dated/All_data_19_Oct.rds")
+EstDepMerged <- inner_join(Eng_Only_data, PostcodeDepMerged, by = c("postcode" = "pcds"))
 
 # rank <- EstDepMerged$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`
 # score <- EstDepMerged$`Index of Multiple Deprivation (IMD) Score`
-
-
+# plot(rank, score)
 
 ############################################################
 ############################################################
@@ -263,7 +264,7 @@ EstDepMerged$rating <- as_factor(as.character(EstDepMerged$rating))
 #
 clm <- clm(formula = fct_rev(rating)~`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`, data = EstDepMerged)
 summary(clm)
-clmlog <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`), data = EstDepMerged)
+ clmlog <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`), data = EstDepMerged)
 summary(clmlog)
 clmtype <- clm(formula = fct_rev(rating)~type, data = EstDepMerged)
 summary(clmtype)

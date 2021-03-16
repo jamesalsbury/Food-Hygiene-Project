@@ -10,7 +10,10 @@ All_postcode_areas_merged <- readRDS("data/All_postcode_areas_merged.rds")
 ZoomReferenceTable <- readRDS("data/ZoomReferenceTable.rds")
 merged_sp_summary <- readRDS("data/merged_sp_summary.rds")
 postcodeAreas <- readRDS("data/postcodeAreas.rds")
-All_data_19_Oct <- readRDS("data/All_data_19_Oct.rds")
+Eng_Only_data <- readRDS("data/Eng_Only_data.rds")
+Eng_Only_data <- Eng_Only_data %>%
+  filter(rating %in% 0:5)
+Eng_Only_data$rating <- as.numeric(Eng_Only_data$rating)
 mycolourpalette <- c("grey", "salmon", "cornflowerblue")
 myratingpalette <- rev(brewer.pal(n=6, name = "RdYlGn"))
 my.options <- 5:0
@@ -37,7 +40,6 @@ ui <- fluidPage(
                      label = c("Choose ratings to view"), choiceNames = my.fun(), choiceValues = myratingpalette)),
       uiOutput(outputId = "mytextoutput"),
       tableOutput(outputId = "mysummarystats1"),
-      tableOutput(outputId = "mysummarystats2"),
       selectInput(inputId = "mychoices", label = "Plot?", choices = c("Ratings", "Overall ratings")),
       plotOutput(outputId = "ratingsplot")
     ),
@@ -53,6 +55,7 @@ server <- function(input, output, session) {
 
 ZoomedIn <<- FALSE
 AreaClicked <<- FALSE
+NoEst <<- FALSE
 
   ###This loads the map when Shiny starts
   output$map <- renderLeaflet({
@@ -174,6 +177,8 @@ AreaClicked <<- FALSE
 
           AreaClicked <<- FALSE #Back to false in case we want to click a district next time
 
+          MyMarkers = c()
+
         } else { #If we clicked on a district, not a different area
 
 
@@ -190,14 +195,24 @@ AreaClicked <<- FALSE
             }
           }
 
-          MyMarkers <- All_data_19_Oct %>%
+          MyMarkers <- Eng_Only_data %>%
             filter(postcodeDistrict==click$id) %>%
             filter(rating %in% 0:5) %>%
             filter(OverallRaw %in% 0:80) %>%
             drop_na(long) %>%
-            drop_na(lat) %>%
-            st_as_sf(coords = c("long", "lat"), crs = 4326) %>%
-            st_jitter(factor = 0.001)
+            drop_na(lat)
+
+          if (nrow(MyMarkers)==0){
+            NoEst = TRUE
+          } else{
+            NoEst = FALSE
+          }
+
+          if (NoEst==FALSE){
+            MyMarkers <- MyMarkers %>%
+              st_as_sf(coords = c("long", "lat"), crs = 4326) %>%
+              st_jitter(factor = 0.001)
+          }
 
         #We need to turn the polygon of the district we clicked blue
 
@@ -262,107 +277,120 @@ AreaClicked <<- FALSE
 
           #Show the establishments if toggle = TRUE
           observe({
-            proxy <- leafletProxy("map")
-            proxy %>%
-              clearMarkers()
-            if (input$esttoggle) { #If TRUE
-              if (length(input$ratingschosen)!=0){
-                chosenvec <- input$ratingschosen
-                proxy %>%
-                  clearMarkers()
-                for (i in 1:length(chosenvec)){
-                  ratingchosen <- my.options[which(chosenvec[i]== myratingpalette)]
-                  temp <- MyMarkers %>%
-                    filter(rating==ratingchosen)
-                  mytext3 <- paste0(
-                    "Name: ", temp$name,"<br/>",
-                    "Rating: ", temp$rating, "<br/>",
-                    "Raw rating: ", temp$OverallRaw) %>%
-                    lapply(htmltools::HTML)
+
+            if (NoEst==FALSE){
+              proxy <- leafletProxy("map")
+              proxy %>%
+                clearMarkers()
+              if (input$esttoggle) { #If TRUE
+                if (length(input$ratingschosen)!=0){
+                  chosenvec <- input$ratingschosen
                   proxy %>%
-                    addCircleMarkers(data = temp, label = mytext3, col = chosenvec[i])
+                    clearMarkers()
+                  for (i in 1:length(chosenvec)){
+                    ratingchosen <- my.options[which(chosenvec[i]== myratingpalette)]
+                    temp <- MyMarkers %>%
+                      filter(rating==ratingchosen)
+                    mytext3 <- paste0(
+                      "Name: ", temp$name,"<br/>",
+                      "Rating: ", temp$rating, "<br/>",
+                      "Raw rating: ", temp$OverallRaw) %>%
+                      lapply(htmltools::HTML)
+                    if (nrow(temp)!=0){
+                      #print(click$id)
+                      proxy %>%
+                        addCircleMarkers(data = temp, label = mytext3, col = chosenvec[i])
+                    }
+
+                  }
                 }
               }
             }
+
           })
 
 
           output$mytextoutput <- renderUI({
+            for (i in 1:length(postcodeAreas)){
+              if (str_extract(click$id, "[A-Z]+") == postcodeAreas[i]){
+                break
+              }
+            }
+
+            for (j in 1:length(merged_sp_summary[[i]])){
+              if (click$id == merged_sp_summary[[i]]@data$name[j]){
+                break
+              }
+            }
 
 
 
-            HTML(paste("Chosen postcode area: ", click$id))
+            HTML(paste("Chosen postcode area: ", click$id), ", Count in area: ", nrow(MyMarkers))
           })
 
            output$mysummarystats1 <- renderTable({
-             for (i in 1:length(postcodeAreas)){
-               if (str_extract(click$id, "[A-Z]+") == postcodeAreas[i]){
-                 break
+
+             if (NoEst==FALSE){
+               for (i in 1:length(postcodeAreas)){
+                 if (str_extract(click$id, "[A-Z]+") == postcodeAreas[i]){
+                   break
+                 }
                }
-             }
 
-             for (j in 1:length(merged_sp_summary[[i]])){
-               if (click$id == merged_sp_summary[[i]]@data$name[j]){
-                 break
+               for (j in 1:length(merged_sp_summary[[i]])){
+                 if (click$id == merged_sp_summary[[i]]@data$name[j]){
+                   break
+                 }
                }
+
+               Eng_rating_mean <- Eng_Only_data %>%
+                 filter(rating %in% 0:5) %>%
+                 summarise(mean = mean(rating))
+
+               Chosen_area_rating_mean <- Eng_Only_data %>%
+                 filter(postcodeArea==str_extract(click$id, "[A-Z]+")) %>%
+                 filter(rating %in% 0:5) %>%
+                 summarise(mean = mean(rating))
+
+
+               Chosen_district_mean <- MyMarkers %>%
+                 filter(rating %in% 0:5) %>%
+                 summarise(mean = mean(rating))
+
+               Eng_raw_mean <-Eng_Only_data %>%
+                 filter(OverallRaw %in% 0:80) %>%
+                 summarise(mean = mean(OverallRaw))
+
+               Chosen_area_raw_mean <- Eng_Only_data %>%
+                 filter(postcodeArea==str_extract(click$id, "[A-Z]+")) %>%
+                 filter(OverallRaw %in% 0:80) %>%
+                 summarise(mean = mean(OverallRaw))
+
+               Chosen_district_raw_mean <- MyMarkers %>%
+                 filter(rating %in% 0:5) %>%
+                 summarise(mean = mean(OverallRaw))
+
+               Country = c(Eng_rating_mean$mean, Eng_raw_mean$mean)
+               Area = c(Chosen_area_rating_mean$mean, Chosen_area_raw_mean$mean)
+               District = c(Chosen_district_mean$mean, Chosen_district_raw_mean$mean)
+
+
+               df <- data.frame(Meanrating = c("Mean Food Hygiene Rating:", "Mean Overall Raw Rating:"),
+                                CountryMean = Country,
+                                AreaMean = Area,
+                                DistrictMean = District)
+
+               names(df) <- c("Area:", "England", paste("", str_extract(click$id, "[A-Z]+")), paste("", click$id))
+
+               return(df)
              }
-
-             Eng_Wal_rating_mean <- All_data_19_Oct %>%
-               filter(rating %in% 0:5) %>%
-               summarise(mean = mean(rating))
-
-             Chosen_area_rating_mean <- All_data_19_Oct %>%
-               filter(postcodeArea==str_extract(click$id, "[A-Z]+")) %>%
-               filter(rating %in% 0:5) %>%
-               summarise(mean = mean(rating))
-
-
-             df <- data.frame(CountryMean = Eng_Wal_rating_mean,
-                        AreaMean = Chosen_area_rating_mean,
-               DistrictMean = merged_sp_summary[[i]]@data[j,]$mean,
-             Count = merged_sp_summary[[i]]@data[j,]$count)
-
-             names(df) <- c("Mean rating for Eng and Wal", paste("Mean rating for ", str_extract(click$id, "[A-Z]+")), paste("Mean rating for ", click$id), "Count")
-
-             return(df)
-
 
 
            })
 
-           output$mysummarystats2 <- renderTable({
-             for (i in 1:length(postcodeAreas)){
-               if (str_extract(click$id, "[A-Z]+") == postcodeAreas[i]){
-                 break
-               }
-             }
-
-             for (j in 1:length(merged_sp_summary[[i]])){
-               if (click$id == merged_sp_summary[[i]]@data$name[j]){
-                 break
-               }
-             }
-
-             Eng_Wal_raw_mean <-All_data_19_Oct %>%
-               filter(OverallRaw %in% 0:80) %>%
-               summarise(mean = mean(OverallRaw))
-
-             Chosen_area_raw_mean <- All_data_19_Oct %>%
-               filter(postcodeArea==str_extract(click$id, "[A-Z]+")) %>%
-               filter(OverallRaw %in% 0:80) %>%
-               summarise(mean = mean(OverallRaw))
-
-
-             df <- data.frame(RawEngWales = Eng_Wal_raw_mean,
-                        AreaRaw = Chosen_area_raw_mean,
-                        DistrictRaw = merged_sp_summary[[i]]@data[j,]$rawmean)
-
-            names(df) <- c("Raw Mean for Eng and Wal", paste("Raw Mean for ", str_extract(click$id, "[A-Z]+")), paste("Raw Mean for ", click$id))
-
-             return(df)
-
-           })
            output$ratingsplot <- renderPlot({
+
+             if (NoEst == FALSE){
                if (input$mychoices == "Ratings"){
                  myRatings <- MyMarkers %>%
                    count(rating)
@@ -371,18 +399,14 @@ AreaClicked <<- FALSE
                  rating = 0:5
 
 
-                   for (i in 1:6){
-                     if ((i-1) %in% myRatings$rating){
-                       n[i] = myRatings[which(myRatings$rating==(i-1)),2]$n
-                     }
-                     else {
-                       n[i] = 0
-                     }
+                 for (i in 1:6){
+                   if ((i-1) %in% myRatings$rating){
+                     n[i] = myRatings[which(myRatings$rating==(i-1)),2]$n
                    }
-
-
-
-
+                   else {
+                     n[i] = 0
+                   }
+                 }
 
 
                  myRatings <- data.frame(rating = rating, count = as.numeric(n), colourvec = rev(myratingpalette))
@@ -395,19 +419,20 @@ AreaClicked <<- FALSE
                    group_by(rating) %>%
                    count(OverallRaw)
 
-                OverallRawCount$rating <- as_factor(OverallRawCount$rating)
+                 OverallRawCount$rating <- as_factor(OverallRawCount$rating)
 
                  ggplot(data = OverallRawCount, aes(x = OverallRaw, y = n, fill = rating)) +
                    geom_bar(stat="identity") + ylab("Count") +
-                   xlab("Overall score") + theme_classic() + scale_fill_manual(breaks=c('5', '4', '3', '2', '1', '0'), values = c("#1A9850", "#91CF60", "#D9EF8B", "#FEE08B" ,"#FC8D59", "#D73027"))
+                   xlab("Overall score") + theme_classic() + scale_fill_manual(breaks=5:0, values = myratingpalette)
 
 
+               }
              }
+
            })
 
         }
       }
-
 
 
     })
@@ -416,4 +441,5 @@ AreaClicked <<- FALSE
 }
 
 shinyApp(ui = ui, server = server)
+
 
