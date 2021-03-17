@@ -219,12 +219,13 @@ library(tidyverse)
 DepData <- read_csv("data/File_7_-_All_IoD2019_Scores__Ranks__Deciles_and_Population_Denominators_3.csv")
 PostcodeData <- read_csv("data/PCD_OA_LSOA_MSOA_LAD_AUG20_UK_LU.csv")
 PostcodeDepMerged <- inner_join(PostcodeData, DepData, by = c("lsoa11cd" = "LSOA code (2011)"))
-Eng_Only_data <- readRDS("data/API_dated/All_data_19_Oct.rds")
+Eng_Only_data <- readRDS("data/Eng_Only_data.rds")
 EstDepMerged <- inner_join(Eng_Only_data, PostcodeDepMerged, by = c("postcode" = "pcds"))
 
 # rank <- EstDepMerged$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`
 # score <- EstDepMerged$`Index of Multiple Deprivation (IMD) Score`
 # plot(rank, score)
+
 
 ############################################################
 ############################################################
@@ -268,9 +269,17 @@ summary(clm)
 summary(clmlog)
 clmtype <- clm(formula = fct_rev(rating)~type, data = EstDepMerged)
 summary(clmtype)
-clminteraction <- clmlog <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)*type, data = EstDepMerged)
+clminteraction <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)*type, data = EstDepMerged)
 summary(clminteraction)
 
+clmregion<- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+Region+type, data = EstDepMerged)
+summary(clmregion)
+
+clmregioninteract <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)*Region, data = EstDepMerged)
+summary(clmregioninteract)
+
+allclm <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)*Region*type, data = EstDepMerged)
+summary(allclm)
 ############################################################
 ############################################################
 #Clustering

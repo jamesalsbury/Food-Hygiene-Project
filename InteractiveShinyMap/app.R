@@ -297,7 +297,6 @@ NoEst <<- FALSE
                       "Raw rating: ", temp$OverallRaw) %>%
                       lapply(htmltools::HTML)
                     if (nrow(temp)!=0){
-                      #print(click$id)
                       proxy %>%
                         addCircleMarkers(data = temp, label = mytext3, col = chosenvec[i])
                     }

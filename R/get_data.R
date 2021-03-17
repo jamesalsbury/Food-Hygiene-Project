@@ -106,9 +106,9 @@ All_data <- All_data  %>%
 
 #Change date!!
 
-All_data_8_Mar <- All_data
+All_data_15_Mar <- All_data
 
-saveRDS(All_data_8_Mar, file = "data/API_dated/All_data_8_Mar.rds")
+saveRDS(All_data_15_Mar, file = "data/API_dated/All_data_15_Mar.rds")
 
 #Might be needed!!
 getwd()
