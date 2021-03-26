@@ -45,7 +45,10 @@ ui <- fluidPage(
     ),
 
     mainPanel(
-      leafletOutput("map", height=800)
+      tabsetPanel(type = "tabs",
+                  tabPanel("Map", leafletOutput("map", height=800)),
+                  tabPanel("Help", uiOutput("helptext"))
+      )
     )
   )
 )
@@ -56,6 +59,30 @@ server <- function(input, output, session) {
 ZoomedIn <<- FALSE
 AreaClicked <<- FALSE
 NoEst <<- FALSE
+
+
+  output$helptext <- renderUI({
+    # paste("To get started, click on a postcode area on the map.",
+    #
+    # HTML("<ul><li>...text...</li><li>...more text...</li></ul>"))
+
+    helptext <- paste0("<font size=4>","<br/>",
+      " At any time, if you hover your mouse over an area, the map will tell you what the area is before clicking on it.","<br/>","<br/>", "So to get started, click on a postcode area on the map.","<br/>","<br/>",
+   "From here, you can either:", "<ul><li>Click on a postcode district</li><li>Click on different postcode area</li></ul>", "<br/>",
+   "When you click on a postcode district, the panel on the left-hand side will show some summary statistics associated with that postcode district. It will show:",
+   "<ul><li>An establishment toggle which if clicked, shows the possible ratings of establishments. If the ratings toggle(s) is checked then the map will show the establishments in the postcode district with the associated rating. These will be the same colour as shown in the plots and the text of hte ratings. Multiple ratings can be shown simulatenously too.</li><li>Number of estabblishments in the chosen postcide district</li><li>Mean Food Hygiene rating (where higher is better) for: <ul><li> England</li><li>Postcode area in which the postcode district lies in</li><li>Postcode district</li></ul><li>Mean overall raw rating (where lower is better) for:
+   <ul><li>England</li><li>Postcode area in which the postcode district lies in</li><li>Postcode district</li></ul><li>A bar chart of either:<ul><li>Count of ratings in postcode district</li><li>Raw ratings in postcode district, coloured by rating</li></ul>") %>%
+      lapply(htmltools::HTML)
+  })
+
+
+
+
+
+
+
+
+
 
   ###This loads the map when Shiny starts
   output$map <- renderLeaflet({
@@ -268,12 +295,6 @@ NoEst <<- FALSE
 
 
           #We need to add establishments if toggle if true
-
-
-
-
-
-
 
           #Show the establishments if toggle = TRUE
           observe({
