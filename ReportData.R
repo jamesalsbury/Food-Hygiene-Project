@@ -280,6 +280,52 @@ summary(clmregioninteract)
 
 allclm <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)*Region*type, data = EstDepMerged)
 summary(allclm)
+
+
+
+EstDepMerged %>%
+  count(authorityName)
+
+clmauth <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+type+authorityName, data=EstDepMerged)
+summary(clmauth)
+
+saveRDS(clmauth, "data/FullAuthorityModel.rds")
+
+##############################
+#Looking at regions too
+##############################
+library(MASS)
+library(ordinal)
+library(ggplot2)
+library(tidyverse)
+
+#Looking at full model; ratings ~ dep data + type + local authority
+mycoef = readRDS("data/mycoef.rds")
+
+ggplot(mycoef) + geom_point(aes(x = Estimate, y = rank, col=myRegion)) + geom_point(data = mycoef, aes(x = upper, y = rank, col=myRegion))+
+  geom_point(data = mycoef, aes(x = lower, y = rank, col=myRegion))
+
+
+summarystatsfull <- mycoef %>%
+  group_by(myRegion) %>%
+  summarise(median = median(rank), mean = mean(rank))
+
+
+#Looking at just local authorities; ratings ~ local authority
+
+AuthorityCLM = readRDS("data/AuthorityCLM.rds")
+
+ggplot(AuthorityCLM) + geom_point(aes(x = Coef, y = myRank, col=myRegion))+ geom_point(data = AuthorityCLM, aes(x = upper, y = myRank, col=myRegion))+
+  geom_point(data = AuthorityCLM, aes(x = lower, y = myRank, col=myRegion))
+
+summarystatsauth <- AuthorityCLM %>%
+  group_by(myRegion) %>%
+  summarise(median = median(myRank), mean = mean(myRank))
+
+
+
+
+
 ############################################################
 ############################################################
 #Clustering

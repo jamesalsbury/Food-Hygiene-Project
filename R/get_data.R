@@ -106,12 +106,85 @@ All_data <- All_data  %>%
 
 #Change date!!
 
-All_data_15_Mar <- All_data
+All_data_29_Mar <- All_data
 
-saveRDS(All_data_15_Mar, file = "data/API_dated/All_data_15_Mar.rds")
+saveRDS(All_data_29_Mar, file = "data/API_dated/All_data_29_Mar.rds")
 
 #Might be needed!!
 getwd()
 setwd("/Users/jamesalsbury/Food-Hygiene-Project")
 
 nrow(All_data) - nrow(All_data_19_Oct)
+
+
+
+
+################################################
+#Combining all data so far
+################################################
+
+
+library(dplyr)
+library(tidyverse)
+library(ggplot2)
+
+
+names <- c("19_Oct", "26_Oct", "2_Nov", "9_Nov", "16_Nov", "23_Nov", "30_Nov", "7_Dec",
+           "14_Dec", "21_Dec", "1_Feb", "8_Feb", "15_Feb", "22_Feb", "1_Mar", "22_Mar")
+
+dayssincestartvec = c(seq(0, 63, 7), seq(105, 133, 7), 154)
+
+for (i in 1:length(names)){
+  assign(paste0("All_data_", names[i]), readRDS(paste0("data/API_dated/All_data_", names[i], ".rds")))
+}
+
+All_data_19_Oct = All_data_19_Oct[,1:14]
+
+
+for (i in 1:length(names)){
+  dayssincestart = vector(length = nrow(eval(parse(text = paste0("All_data_", names[i])))))
+  for (j in 1:length(dayssincestart)){
+    dayssincestart[j] = dayssincestartvec[i]
+  }
+
+ temp <- eval(parse(text = paste0("All_data_", names[i]))) %>%
+    add_column(dayssincestart)
+
+ assign(paste0("All_data_", names[i]), temp)
+}
+
+combined = rbind(All_data_19_Oct, All_data_26_Oct)
+
+
+for (i in 3:length(names)){
+  combined = rbind(combined, eval(parse(text = paste0("All_data_", names[i]))))
+}
+
+combined <- combined %>%
+  filter(type!=0)
+
+types <- combined %>%
+  group_by(type, dayssincestart) %>%
+  count(type)
+
+
+ggplot(types) + geom_line(aes(x=dayssincestart, y = n, colour = type))
+
+
+ratings <- combined %>%
+  group_by(rating, dayssincestart) %>%
+  filter(rating %in% 0:5) %>%
+  count(rating)
+
+ggplot(ratings) + geom_line(aes(x=dayssincestart, y = n, colour = rating))
+
+
+mycount <- combined %>%
+  group_by(dayssincestart) %>%
+  count() %>%
+  ungroup()
+
+
+
+plot(mycount$dayssincestart, mycount$n)
+
