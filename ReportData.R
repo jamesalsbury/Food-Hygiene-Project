@@ -8,8 +8,8 @@ All_data_19_Oct <-readRDS("data/API_dated/All_data_19_Oct.rds")
 
 Eng_Only_data <- All_data_19_Oct %>%
   filter(Region!="Scotland") %>%
-  filter(Region!="Wales")
-
+  filter(Region!="Wales") %>%
+  filter(Region!="Northern Ireland")
 
 ############################################################
 #Finding out the different types of establishments
@@ -23,7 +23,7 @@ formatter1000 <- function(x){
 }
 
 TypeBarChart <- ggplot(data = EstTypeCount, aes(x = type, y=n)) +
-  geom_bar(stat  = "identity", fill = "steelblue")  + ylab("Count") +ylim(c(0,145000)) +
+  geom_bar(stat  = "identity", fill = "steelblue")  + ylab("Count") +ylim(c(0,125000)) +
   xlab("Type of establishment") + theme_classic() + geom_text(aes(label=n),hjust=-0.3) + coord_flip()
 
 
@@ -36,11 +36,13 @@ RatingCount <- Eng_Only_data %>%
   filter(rating %in% 0:5) %>%
   count(rating)
 
-
+Eng_Only_data %>%
+  count(rating)
 
 RatingBarChart <- ggplot(data = RatingCount, aes(x=rating, y=n)) + geom_bar(stat = "identity", fill = rev(myratingpalette))+
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
   xlab("Rating") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
+
 
 ############################################################
 #Finding out the different raw ratings of establishments
@@ -53,12 +55,15 @@ OverallRawCount <- Eng_Only_data %>%
 
 RawBarChart <- ggplot(data = OverallRawCount, aes(x = OverallRaw, y = n, fill=rating)) + geom_bar(stat="identity") +
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
-  xlab("Overall score") + theme_classic() + labs(fill="Rating") + scale_fill_manual(breaks=c('5', '4', '3', '2', '1', '0'), values = c("#1A9850", "#91CF60", "#D9EF8B", "#FEE08B" ,"#FC8D59", "#D73027"))
-
+  xlab("Raw score") + theme_classic() + labs(fill="Rating") + scale_fill_manual(breaks=c('5', '4', '3', '2', '1', '0'), values = c("#1A9850", "#91CF60", "#D9EF8B", "#FEE08B" ,"#FC8D59", "#D73027"))
 
 ############################################################
 #Finding out the breakdown of the raw ratings
 ############################################################
+
+
+library(fields)
+library(pheatmap)
 
 
 HygieneCount <- Eng_Only_data %>%
@@ -82,6 +87,19 @@ ManagementBarCount <- ggplot(data = ManagementCount, aes(x = s_management, y=n))
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
   xlab("Management score") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
 
+
+require(gridExtra)
+grid.arrange(HygieneBarCount, StructuralBarCount, ManagementBarCount, ncol=3)
+
+Yes <- Eng_Only_data %>%
+  filter(s_hygiene %in% 0:80)
+
+cor(Yes$s_hygiene, Yes$s_structural)
+cor(Yes$s_hygiene, Yes$s_management)
+cor(Yes$s_management, Yes$s_structural)
+
+
+
 ############################################################
 ############################################################
 #Plotting the data set onto a map
@@ -96,6 +114,14 @@ library(dplyr)
 library(sf)
 library(RColorBrewer)
 
+Eng_Only_data <- Eng_Only_data %>%
+  filter(rating %in% 0:5)
+
+NoPC <- Eng_Only_data %>%
+  filter(is.na(postcodeArea))
+
+count <- NoPC %>%
+  count(authorityName)
 
 
 postcodeAreas <- c("AL" ,"B", "BA" ,"BB" ,"BD" ,"BH" ,"BL" ,"BN" ,"BR" ,"BS", "CA", "CB", "CF",
@@ -304,6 +330,12 @@ mycoef = readRDS("data/mycoef.rds")
 
 ggplot(mycoef) + geom_point(aes(x = Estimate, y = rank, col=myRegion)) + geom_point(data = mycoef, aes(x = upper, y = rank, col=myRegion))+
   geom_point(data = mycoef, aes(x = lower, y = rank, col=myRegion))
+
+ggplot(mycoef) +
+  geom_errorbar(aes(y = rank, xmin = lower, xmax = upper), alpha = 0.2) +
+  geom_point(aes(y = rank, x = Estimate, colour = myRegion), size = 0.5) +
+  theme_minimal() +
+  geom_rug(aes(y = rank, x = Estimate, colour = myRegion), sides = "l")
 
 
 summarystatsfull <- mycoef %>%
