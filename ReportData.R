@@ -16,16 +16,23 @@ Eng_Only_data <- All_data_19_Oct %>%
 ############################################################
 
 EstTypeCount <- Eng_Only_data %>%
-  count(type)
+  count(type) %>%
+  arrange(desc(n))
 
 formatter1000 <- function(x){
   x/1000
 }
 
+types = rev(EstTypeCount$type)
 TypeBarChart <- ggplot(data = EstTypeCount, aes(x = type, y=n)) +
-  geom_bar(stat  = "identity", fill = "steelblue")  + ylab("Count") +ylim(c(0,125000)) +
-  xlab("Type of establishment") + theme_classic() + geom_text(aes(label=n),hjust=-0.3) + coord_flip()
+  geom_bar(stat  = "identity", fill = "steelblue")  + ylab("Count") +ylim(c(0,125000))  + scale_x_discrete(limits = types) +
+  xlab("Type of establishment") + theme_classic() + geom_text(aes(label=n),hjust=-0.3, size=6) + coord_flip() + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
 
+TypeBarChart
+
+png("BarChartType.png", width = 1200, height=400)
+ TypeBarChart
+ dev.off()
 
 ############################################################
 #Finding out the different ratings of establishments
@@ -39,9 +46,16 @@ RatingCount <- Eng_Only_data %>%
 Eng_Only_data %>%
   count(rating)
 
+RatingCount
+
 RatingBarChart <- ggplot(data = RatingCount, aes(x=rating, y=n)) + geom_bar(stat = "identity", fill = rev(myratingpalette))+
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
-  xlab("Rating") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
+  xlab("Rating") + theme_classic() + geom_text(aes(label=n),vjust=-0.3, size=6) +  theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+
+png("BarChartRatings.png", width = 1200, height=400)
+RatingBarChart
+dev.off()
 
 
 ############################################################
@@ -55,7 +69,11 @@ OverallRawCount <- Eng_Only_data %>%
 
 RawBarChart <- ggplot(data = OverallRawCount, aes(x = OverallRaw, y = n, fill=rating)) + geom_bar(stat="identity") +
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
-  xlab("Raw score") + theme_classic() + labs(fill="Rating") + scale_fill_manual(breaks=c('5', '4', '3', '2', '1', '0'), values = c("#1A9850", "#91CF60", "#D9EF8B", "#FEE08B" ,"#FC8D59", "#D73027"))
+  xlab("Raw score") + theme_classic() + labs(fill="Rating") + scale_fill_manual(breaks=c('5', '4', '3', '2', '1', '0'), values = c("#1A9850", "#91CF60", "#D9EF8B", "#FEE08B" ,"#FC8D59", "#D73027")) +  theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+png("RawBarchart.png", width = 1200, height=400)
+RawBarChart
+dev.off()
 
 ############################################################
 #Finding out the breakdown of the raw ratings
@@ -71,32 +89,64 @@ HygieneCount <- Eng_Only_data %>%
 
 HygieneBarCount <- ggplot(data = HygieneCount, aes(x = s_hygiene, y=n)) +  geom_bar(stat = "identity", fill = "steelblue") +
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
-  xlab("Hygiene score") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
+  xlab("Hygiene score") + theme_classic() + geom_text(aes(label=n),vjust=-0.3, size =5) + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 20)))
 
 StructuralCount <- Eng_Only_data %>%
   count(s_structural)
 
 StructuralBarCount <- ggplot(data = StructuralCount, aes(x = s_structural, y=n)) +  geom_bar(stat = "identity", fill = "steelblue") +
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
-  xlab("Structural score") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
+  xlab("Structural score") + theme_classic() + geom_text(aes(label=n),vjust=-0.3, size=5) + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 20)))
 
 ManagementCount <- Eng_Only_data %>%
   count(s_management)
 
 ManagementBarCount <- ggplot(data = ManagementCount, aes(x = s_management, y=n)) +  geom_bar(stat = "identity", fill = "steelblue") +
   scale_y_continuous(labels=formatter1000) + ylab("Count (in thousands)") +
-  xlab("Management score") + theme_classic() + geom_text(aes(label=n),vjust=-0.3)
+  xlab("Management score") + theme_classic() + geom_text(aes(label=n),vjust=-0.3, size=5) + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 20)))
 
-
+png("3RawBarCharts.png", width = 1200, height=400)
 require(gridExtra)
 grid.arrange(HygieneBarCount, StructuralBarCount, ManagementBarCount, ncol=3)
+dev.off()
+
 
 Yes <- Eng_Only_data %>%
   filter(s_hygiene %in% 0:80)
 
+
+Yes %>%
+  filter(s_hygiene==s_structural) %>%
+  filter(s_structural==s_management) %>%
+  filter(s_hygiene==s_management)
+
+
+Yes
+
+
+Yes = Yes[,7:9]
+
 cor(Yes$s_hygiene, Yes$s_structural)
 cor(Yes$s_hygiene, Yes$s_management)
 cor(Yes$s_management, Yes$s_structural)
+
+plot(Yes$s_hygiene, Yes$s_structural)
+
+
+library(ellipse)
+library(RColorBrewer)
+
+# Use of the mtcars data proposed by R
+data <- cor(Yes)
+
+# Build a Pannel of 100 colors with Rcolor Brewer
+my_colors <- brewer.pal(5, "Spectral")
+my_colors <- colorRampPalette(my_colors)(100)
+
+# Order the correlation matrix
+ord <- order(data[1, ])
+data_ord <- data[ord, ord]
+plotcorr(data_ord , col=my_colors[data_ord*50+50] , mar=c(1,1,1,1)  )
 
 
 
@@ -117,35 +167,30 @@ library(RColorBrewer)
 Eng_Only_data <- Eng_Only_data %>%
   filter(rating %in% 0:5)
 
-NoPC <- Eng_Only_data %>%
-  filter(is.na(postcodeArea))
-
-count <- NoPC %>%
-  count(authorityName)
 
 
-postcodeAreas <- c("AL" ,"B", "BA" ,"BB" ,"BD" ,"BH" ,"BL" ,"BN" ,"BR" ,"BS", "CA", "CB", "CF",
-                   "CH", "CM" ,"CO" ,"CR" ,"CT" ,"CV", "CW", "DA" ,"DE" ,"DH",
+postcodeAreas <- c("AL" ,"B", "BA" ,"BB" ,"BD" ,"BH" ,"BL" ,"BN" ,"BR" ,"BS", "CA", "CB",
+                   "CH", "CM" ,"CO" ,"CR" ,"CT" ,"CV", "CW", "DA" ,"DE", "DG","DH",
                    "DL", "DN", "DT", "DY", "E" ,"EC", "EN" ,"EX", "FY","GL" ,
                    "GU", "HA", "HD" ,"HG", "HP", "HR","HU", "HX", "IG", "IP",
                    "KT", "L", "LA", "LD", "LE", "LL","LN", "LS", "LU" ,"M", "ME", "MK",
                    "N", "NE" ,"NG" ,"NN","NP", "NR", "NW", "OL", "OX", "PE",
-                   "PL", "PO", "PR", "RG", "RH", "RM", "S","SA", "SE", "SG", "SK", "SL", "SM",
-                   "SN", "SO", "SP", "SR", "SS", "ST", "SW","SY", "TA", "TF", "TN", "TQ",
+                   "PL", "PO", "PR", "RG", "RH", "RM", "S","SE", "SG", "SK", "SL", "SM",
+                   "SN", "SO", "SP", "SR", "SS", "ST", "SW","SY", "TA", "TD", "TF", "TN", "TQ",
                    "TR", "TS", "TW", "UB", "W", "WA", "WC", "WD", "WF", "WN", "WR", "WS", "WV",
                    "YO")
 
-bad_areas = c(10, 19, 31, 49)
+
+bad_areas = c(10, 18, 31, 49)
 goodPostcodeAreas = postcodeAreas[-bad_areas]
 badPostcodeAreas = postcodeAreas[bad_areas]
-
 
 sp_poly = list()
 postcode_data = list()
 postcode_summary = list()
 merged_sp_summary  = list()
 
-
+#Need geojsonio for this
 for (i in seq_along(goodPostcodeAreas)) {
   #Get the spatial data for the well-behaved postcode datasets
   path = paste0("https://raw.githubusercontent.com/missinglink/uk-postcode-polygons/master/geojson/",
@@ -207,8 +252,20 @@ for (i in seq_along(postcodeAreas)) {
   }
 }
 
+#Just the postcodes plotted
+leaflet() %>%
+  setView(lng = -0.75, lat = 53, zoom = 8) %>%
+  addTiles() %>%
+  addScaleBar() %>%
+  addPolygons(data = All_postcodes_merged,
+              fillColor = "red",
+              weight = 2,
+              opacity = 0.2,
+              color = "red",
+              dashArray = "2",
+              fillOpacity = 0.2)
 
-
+#Mean food hygiene ratings
 bins <- seq(3.5, 5, by = 0.25)
 pal_sb <- colorBin("RdYlGn", domain = All_postcodes_merged$mean, bins=bins)
 mytext <- paste0(
@@ -229,10 +286,40 @@ leaflet() %>%
               color = "white",
               dashArray = "3",
               fillOpacity = 0.5) %>%
-  addLegend(pal = pal_sb,
+addLegend(pal = pal_sb,
             values = All_postcodes_merged$mean,
-            position = "bottomright",
+            position = "bottomleft",
             title = "Mean hygiene rating")
+
+
+hist(All_postcodes_merged@data$rawmean)
+
+#Mean food hygiene ratings
+bins <- seq(1, 21, by = 4)
+pal_sb <- colorBin("RdYlGn", domain = All_postcodes_merged$rawmean, bins=bins, reverse = TRUE)
+mytext <- paste0(
+  "Area: ", All_postcodes_merged@data$name,"<br/>",
+  "Count in area: ", All_postcodes_merged@data$count, "<br/>",
+  "Mean  hygiene rating: ", round(All_postcodes_merged@data$rawmean, 2)) %>%
+  lapply(htmltools::HTML)
+
+leaflet() %>%
+  setView(lng = -0.75, lat = 53, zoom = 8) %>%
+  addTiles() %>%
+  addScaleBar() %>%
+  addPolygons(data = All_postcodes_merged,
+              fillColor = ~pal_sb(All_postcodes_merged$rawmean),
+              weight = 2,
+              opacity = 0.2,
+              label = mytext,
+              color = "white",
+              dashArray = "3",
+              fillOpacity = 0.5) %>%
+
+  addLegend(pal = pal_sb,
+            values = All_postcodes_merged$rawmean,
+            position = "bottomleft",
+            title = "Mean overall raw score")
 
 
 ############################################################
@@ -248,53 +335,132 @@ PostcodeDepMerged <- inner_join(PostcodeData, DepData, by = c("lsoa11cd" = "LSOA
 Eng_Only_data <- readRDS("data/Eng_Only_data.rds")
 EstDepMerged <- inner_join(Eng_Only_data, PostcodeDepMerged, by = c("postcode" = "pcds"))
 
-# rank <- EstDepMerged$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`
-# score <- EstDepMerged$`Index of Multiple Deprivation (IMD) Score`
-# plot(rank, score)
+ rank <- DepData$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`
+ score <- DepData$`Index of Multiple Deprivation (IMD) Score`
 
+ MyDepData = data.frame(name =DepData$`LSOA name (2011)`, rank <- DepData$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`,
+                        score <- DepData$`Index of Multiple Deprivation (IMD) Score` )
+
+ MyDepDataPlot <- ggplot(data = MyDepData, aes(x = rank, y=score)) +  geom_point() +
+     ylab("Score (where lower is better)") +
+   xlab("Rank (where higher is better)") + theme_classic() + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 20)))
+
+
+MyDepDataPlot
+
+png("DepScore.png", width = 1200, height=400)
+MyDepDataPlot
+dev.off()
 
 ############################################################
 ############################################################
 #Modelling of deprivation data
 ############################################################
 ############################################################
-
+library(tidyverse)
 library(ordinal)
 library(MASS)
-
+library(RColorBrewer)
 EstDepMerged <- readRDS("data/EstDepMerged.rds")
+myratingpalette <- rev(brewer.pal(n=6, name = "RdYlGn"))
+
 
 #Identify chains
-# EstDepMerged <- EstDepMerged %>%
-#   mutate(chain = str_detect(name,"(?i)^Gregg", ) | str_detect(name,"(?i)^Domino", ) | str_detect(name,"(?i)^Burger King", ) | str_detect(name,"(?i)^Mcdonal", )
-#          | str_detect(name,"(?i)^KFC", ) | str_detect(name,"(?i)^Pizza Hut", ) | str_detect(name,"(?i)^Subway", ) | str_detect(name,"(?i)^Costa", )
-#          |str_detect(name,"(?i)^Toby Car", ) | str_detect(name,"(?i)^Bella Ital", ) | str_detect(name,"(?i)^PizzaE", ) | str_detect(name,"(?i)^Nando", )
-#          |str_detect(name,"(?i)^Harvester", ) | str_detect(name,"(?i)^TGI F", ) | str_detect(name,"(?i)^Papa J", ) | str_detect(name,"(?i)^Asda", )
-#          |str_detect(name,"(?i)^Tesco", ) | str_detect(name,"(?i)^Morrison", ) | str_detect(name,"(?i)^Sainsbury", ))
+EstDepMerged <- EstDepMerged %>%
+  mutate(chain = str_detect(name,"(?i)^Gregg", ) | str_detect(name,"(?i)^Domino", ) | str_detect(name,"(?i)^Burger King", ) | str_detect(name,"(?i)^Mcdonal", )
+         | str_detect(name,"(?i)^KFC", ) | str_detect(name,"(?i)^Pizza Hut", ) | str_detect(name,"(?i)^Subway", ) | str_detect(name,"(?i)^Costa", )
+         |str_detect(name,"(?i)^Toby Car", ) | str_detect(name,"(?i)^Bella Ital", ) | str_detect(name,"(?i)^PizzaE", ) | str_detect(name,"(?i)^Nando", )
+         |str_detect(name,"(?i)^Harvester", ) | str_detect(name,"(?i)^TGI F", ) | str_detect(name,"(?i)^Wether", ) | str_detect(name,"(?i)^KrispyK", ) |
+       str_detect(name,"(?i)^Caffe Nero", ) | str_detect(name,"(?i)^Hard Rock Cafe", ) | str_detect(name,"(?i)^Frankie and B", )|
+          str_detect(name,"(?i)^Harry Ramsdens", ) | str_detect(name,"(?i)^Asda", )
+         |str_detect(name,"(?i)^Tesco", ) | str_detect(name,"(?i)^Morrison", ) | str_detect(name,"(?i)^Sainsbury", ))
 
 #Only consider ratings between 0-5:
 EstDepMerged  <- EstDepMerged %>%
   filter(rating %in% 0:5)
 
-#Ensure rating is a factor
-# EstDepMerged$rating <- as_factor(EstDepMerged$rating)
-# EstDepMerged$rating <- fct_rev(EstDepMerged$rating)
-# mymodel <- clm(formula = rating ~ chain, data = EstDepMerged, Hess = T)
-# summary(mymodel)
+#Look at distributions of chains and not chains
+chain = EstDepMerged %>%
+  filter(chain==TRUE) %>%
+  count(rating) %>%
+  add_row(rating="0", n=0, .before = 1) %>%
+  mutate(prop = round(n/sum(n),3))
 
 
+ChainBC <- ggplot(data = chain, aes(x=rating, y=prop)) + geom_bar(stat = "identity", fill = rev(myratingpalette)) + ylim(0,1) +
+  theme_classic() + xlab("Rating") + ylab("Proportion") + geom_text(aes(label=prop),vjust=-0.3, size=6) + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
 
+notchain = EstDepMerged %>%
+  filter(chain==FALSE) %>%
+  count(rating) %>%
+  mutate(prop = round(n/sum(n),3))
+
+
+NotChainBC <- ggplot(data = notchain, aes(x=rating, y=prop)) + geom_bar(stat = "identity", fill = rev(myratingpalette)) + ylim(0,1) +
+  theme_classic() + xlab("Rating") + ylab("Proportion") + geom_text(aes(label=prop),vjust=-0.3, size=6) + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+
+png("Chains.png", width = 1200, height=400)
+require(gridExtra)
+grid.arrange(ChainBC, NotChainBC, ncol=2)
+dev.off()
+
+EstDepMerged %>%
+  count(chain)
+
+most <- EstDepMerged %>%
+  filter(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`%in% 1:100) %>%
+  count(rating) %>%
+  mutate(prop = round(n/sum(n),3))
+
+sum(least$n)
+MostBC <- ggplot(data = most, aes(x=rating, y=prop)) + geom_bar(stat = "identity", fill = rev(myratingpalette)) + ylim(0,1) +
+  theme_classic() + xlab("Rating") + ylab("Proportion") + geom_text(aes(label=prop),vjust=-0.3, size=6) + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+
+least <- EstDepMerged %>%
+  filter(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`%in% 32744:32844) %>%
+  count(rating)  %>%
+  add_row(rating="0", n=0, .before = 1) %>%
+  mutate(prop = round(n/sum(n),3))
+
+LeastBC <- ggplot(data = least, aes(x=rating, y=prop)) + geom_bar(stat = "identity", fill = rev(myratingpalette)) + ylim(0,1) +
+  theme_classic() + xlab("Rating") + ylab("Proportion") + geom_text(aes(label=prop),vjust=-0.3, size=6) + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+png("DeprivationBC.png", width = 1200, height=400)
+require(gridExtra)
+grid.arrange(MostBC, LeastBC, ncol=2)
+dev.off()
+
+
+least <- EstDepMerged %>%
+  filter(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`%in% 32744:32844) %>%
+  count(chain)
+
+most <- EstDepMerged %>%
+  filter(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`%in% 1:100) %>%
+  count(chain)
 #Ordinal regression
 
 EstDepMerged$rating <- as_factor(as.character(EstDepMerged$rating))
 
-#
+#Needs to be rescaled
 clm <- clm(formula = fct_rev(rating)~`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`, data = EstDepMerged)
 summary(clm)
+
+#Works
  clmlog <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`), data = EstDepMerged)
 summary(clmlog)
+
+#Is a chain
+clmchain <- clm(formula = fct_rev(rating)~chain, data = EstDepMerged)
+summary(clmchain)
+
+
+#Types of establishments
 clmtype <- clm(formula = fct_rev(rating)~type, data = EstDepMerged)
 summary(clmtype)
+
 clminteraction <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)*type, data = EstDepMerged)
 summary(clminteraction)
 
@@ -308,6 +474,30 @@ allclm <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD)
 summary(allclm)
 
 
+fullclm <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+chain+type+local, data = EstDepMerged)
+s = summary(fullclm)
+coef =coef(s)
+coef = coef[8:20,]
+coef
+
+EstDepMerged$local
+names = rownames(coef)
+
+coef <- coef%>%
+  as_tibble() %>%
+  add_column(names)
+coef <- coef %>%
+  mutate(types = substring(names, 5))
+coef
+types = rev(coef$types)
+TypesRegression <- ggplot(data = coef, aes(x = types, y=Estimate)) +
+  geom_point(colour="red")+scale_x_discrete(limits = types)  +theme_classic()  + coord_flip() + xlab("Type of establishment") + ylab("Regression Estimate") +
+  geom_errorbar(aes(ymin = Estimate-2*`Std. Error`, ymax = Estimate+2*`Std. Error`)) +theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+png("TypesRegression.png", width = 1200, height=400)
+TypesRegression
+dev.off()
+
 
 EstDepMerged %>%
   count(authorityName)
@@ -316,6 +506,36 @@ clmauth <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD
 summary(clmauth)
 
 saveRDS(clmauth, "data/FullAuthorityModel.rds")
+
+
+
+EstDepMerged %>%
+  filter(authorityName=="Adur") %>%
+  count(rating)
+
+chainfull <- clm(formula = fct_rev(rating)~log(`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`)+type+authorityName+chain, data=EstDepMerged)
+summary(chainfull)
+
+head(FinalCLM$Estimate)
+
+LAPlot <- ggplot(coef) +
+  geom_errorbar(aes(y = rank, xmin = lower, xmax = upper), alpha = 0.2) +
+  geom_point(aes(y = rank, x = Estimate, colour = Region), size = 0.5) +
+  theme_minimal() +
+  geom_rug(aes(y = rank, x = Estimate, colour = Region), sides = "l") +
+  theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+png("LAPlot.png", width = 1200, height=400)
+LAPlot
+dev.off()
+
+
+
+
+
+
+FinalCLM
+
 
 ##############################
 #Looking at regions too
@@ -338,7 +558,7 @@ ggplot(mycoef) +
   geom_rug(aes(y = rank, x = Estimate, colour = myRegion), sides = "l")
 
 
-summarystatsfull <- mycoef %>%
+summarystatsfull <- coef %>%
   group_by(myRegion) %>%
   summarise(median = median(rank), mean = mean(rank))
 
@@ -354,7 +574,7 @@ summarystatsauth <- AuthorityCLM %>%
   group_by(myRegion) %>%
   summarise(median = median(myRank), mean = mean(myRank))
 
-
+summary(clmfullchain)
 
 
 
@@ -363,6 +583,190 @@ summarystatsauth <- AuthorityCLM %>%
 #Clustering
 ############################################################
 ############################################################
+
+
+#Sheffield
+S1 <- Eng_Only_data %>%
+  filter(postcodeDistrict=="S1") %>%
+  filter(s_hygiene %in% 0:80) %>%
+  filter(!is.na(long))
+
+meanhygienevector = vector(length=396)
+meanstructuralvector = vector(length=396)
+meanmanagementvector = vector(length=396)
+meanrawvector = vector(length=396)
+meanratingvector = vector(length=396)
+hygienesum = 0
+structuralsum = 0
+managementsum = 0
+rawsum =  0
+ratingsum = 0
+count = 0
+
+for (i in 1:396){
+  for (j in 1:396){
+    if (i!=j){
+      dist = sqrt((S1[i,]$long - S1[j,]$long)^2+(S1[i,]$lat - S1[j,]$lat)^2)
+      if (dist < fivehundred){
+        count = count + 1
+        hygienesum = hygienesum + S1[j,]$s_hygiene
+        structuralsum = structuralsum + S1[j,]$s_structural
+        managementsum = managementsum + S1[j,]$s_management
+        rawsum = rawsum + S1[j,]$OverallRaw
+        ratingsum = ratingsum + S1[j,]$rating
+      }
+    }
+  }
+  if (count!=0){
+    meanhygienevector[i] = hygienesum/count
+    meanstructuralvector[i] = structuralsum/count
+    meanmanagementvector[i] = managementsum/count
+    meanrawvector[i] = rawsum/count
+    meanratingvector[i] = ratingsum/count
+  } else{
+    meanhygienevector[i] = NA
+    meanstructuralvector[i] = NA
+    meanmanagementvector[i] = NA
+    meanrawvector[i] = NA
+    meanratingvector[i] = NA
+  }
+  hygienesum = 0
+  structuralsum = 0
+  managementsum = 0
+  rawsum =  0
+  ratingsum = 0
+  count = 0
+}
+
+S1Data = S1 %>%
+  group_by(OverallRaw) %>%
+  summarise(Rating = mean(meanratingvector), Hygiene = mean(meanhygienevector), Structural = mean(meanstructuralvector),
+            Management = mean(meanmanagementvector), Raw = mean(meanrawvector))
+
+plot(S1Data$OverallRaw, S1Data$Raw)
+
+
+
+Sheff1 <- ggplot(data = S1Data, aes(x=OverallRaw, y=Rating)) + geom_point(colour="red", size=2) + xlab("Raw score (grouped)") +
+  ylab("Mean rating (higher the better)") + theme_classic() + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+Sheff2 <- ggplot(data = S1Data, aes(x=OverallRaw, y=Raw)) + geom_point(colour="red", size=2) + xlab("Raw score (grouped)") +
+  ylab("Mean raw score (lower the better)") + theme_classic() + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+
+png("SheffieldClustering.png", width = 1200, height=400)
+require(gridExtra)
+grid.arrange(Sheff1, Sheff2, ncol=2)
+dev.off()
+
+#Newcastle
+NE1 <- Eng_Only_data %>%
+  filter(postcodeDistrict=="NE1") %>%
+  filter(s_hygiene %in% 0:80) %>%
+  filter(!is.na(long))
+
+
+
+meanhygienevector = vector(length=601)
+meanstructuralvector = vector(length=601)
+meanmanagementvector = vector(length=601)
+meanrawvector = vector(length=601)
+meanratingvector = vector(length=601)
+hygienesum = 0
+structuralsum = 0
+managementsum = 0
+rawsum =  0
+ratingsum = 0
+count = 0
+
+for (i in 1:601){
+  for (j in 1:601){
+    if (i!=j){
+      dist = sqrt((NE1[i,]$long - NE1[j,]$long)^2+(NE1[i,]$lat - NE1[j,]$lat)^2)
+      if (dist < fivehundred){
+        count = count + 1
+        hygienesum = hygienesum + NE1[j,]$s_hygiene
+        structuralsum = structuralsum + NE1[j,]$s_structural
+        managementsum = managementsum + NE1[j,]$s_management
+        rawsum = rawsum + NE1[j,]$OverallRaw
+        ratingsum = ratingsum + NE1[j,]$rating
+      }
+    }
+  }
+  if (count!=0){
+    meanhygienevector[i] = hygienesum/count
+    meanstructuralvector[i] = structuralsum/count
+    meanmanagementvector[i] = managementsum/count
+    meanrawvector[i] = rawsum/count
+    meanratingvector[i] = ratingsum/count
+  } else{
+    meanhygienevector[i] = NA
+    meanstructuralvector[i] = NA
+    meanmanagementvector[i] = NA
+    meanrawvector[i] = NA
+    meanratingvector[i] = NA
+  }
+  hygienesum = 0
+  structuralsum = 0
+  managementsum = 0
+  rawsum =  0
+  ratingsum = 0
+  count = 0
+}
+NE1
+
+
+NE1Data = NE1 %>%
+  group_by(OverallRaw) %>%
+  summarise(Rating = mean(meanratingvector), Hygiene = mean(meanhygienevector), Structural = mean(meanstructuralvector),
+            Management = mean(meanmanagementvector), Raw = mean(meanrawvector))
+
+
+Newc1 <-  ggplot(data = NE1Data, aes(x=OverallRaw, y=Rating)) + geom_point(colour="red", size=2) + xlab("Raw score (grouped)") +
+  ylab("Mean rating (higher the better)") + theme_classic() + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+Newc2 <- ggplot(data = NE1Data, aes(x=OverallRaw, y=Raw)) + geom_point(colour="red", size=2) + xlab("Raw score (grouped)") +
+  ylab("Mean raw score (lower the better)") + theme_classic() + theme(text = element_text(size = 25), axis.title.y = element_text(margin = margin(r = 40)))
+
+Newc2
+
+png("NewcClustering.png", width = 1200, height=400)
+require(gridExtra)
+grid.arrange(Newc1, Newc2, ncol=2)
+dev.off()
+
+NE1Count <- NE1 %>%
+  count(type) %>%
+  mutate(prop = n/sum(n))
+
+S1Count <- S1 %>%
+  count(type)%>%
+  mutate(prop = n/sum(n))
+
+S1Count
+NE1Count
+
+NE1%>%
+  count(chain)
+
+
+
+
+
+
+
+
+S1 <- S1 %>%
+  mutate(chain = str_detect(name,"(?i)^Gregg", ) | str_detect(name,"(?i)^Domino", ) | str_detect(name,"(?i)^Burger King", ) | str_detect(name,"(?i)^Mcdonal", )
+         | str_detect(name,"(?i)^KFC", ) | str_detect(name,"(?i)^Pizza Hut", ) | str_detect(name,"(?i)^Subway", ) | str_detect(name,"(?i)^Costa", )
+         |str_detect(name,"(?i)^Toby Car", ) | str_detect(name,"(?i)^Bella Ital", ) | str_detect(name,"(?i)^PizzaE", ) | str_detect(name,"(?i)^Nando", )
+         |str_detect(name,"(?i)^Harvester", ) | str_detect(name,"(?i)^TGI F", ) | str_detect(name,"(?i)^Wether", ) | str_detect(name,"(?i)^KrispyK", ) |
+           str_detect(name,"(?i)^Caffe Nero", ) | str_detect(name,"(?i)^Hard Rock Cafe", ) | str_detect(name,"(?i)^Frankie and B", )|
+           str_detect(name,"(?i)^Harry Ramsdens", ) | str_detect(name,"(?i)^Asda", )
+         |str_detect(name,"(?i)^Tesco", ) | str_detect(name,"(?i)^Morrison", ) | str_detect(name,"(?i)^Sainsbury", ))
+
+
+
 
 library(ggplot2)
 SheffMeanCluster <- readRDS("data/SheffMeanCluster.rds")
@@ -420,3 +824,7 @@ min(score)
 rank <- EstDepMerged$`Index of Multiple Deprivation (IMD) Rank (where 1 is most deprived)`
 plot(sort(rank))
 max(rank)
+
+
+
+
